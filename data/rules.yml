@@ -27,6 +27,16 @@ rules:
     - intent: choose_physics_topic
     - action: action_explore_physics_topic
 
+- rule: 繼續探討物理主題
+  condition:
+  # 條件是這個 slot 被設為 true
+  - slot_was_set:
+    - continue_conversation: true
+  steps:
+  - action: action_explore_physics_topic
+  - intent: inform
+  - action: action_explore_physics_topic
+
 # 處理生物主題選擇後的動作
 - rule: Save Biology Topic
   condition:

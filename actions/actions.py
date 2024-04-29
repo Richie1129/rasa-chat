@@ -75,7 +75,7 @@ class ActionRagAbstract(Action):
             content = responses[0]  # 取第一個元素作為 content
 
             data2 = {
-            "engine": "gpt-35-turbo",
+            "engine": "taide-llama-3",
             "temperature": 0.7,
             "max_tokens": 500,
             "top_p": 0.95,
@@ -366,92 +366,79 @@ class ActionExploreChemistryTopic(Action):
 class ActionExplorePhysicsTopic(Action):
     def name(self):
         return "action_explore_physics_topic"
-
-    def run(self, dispatcher, tracker, domain):
-        print("物理")
-        text = tracker.latest_message.get('text')
     
-        if text == "物理-能量的形式與轉換" :
-            dispatcher.utter_message(
-                text="你選擇了能量的形式與轉換。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 能量\n"
-                     "2. 力學能"
-            )
-            return [SlotSet("subtopic", "physics_energy_transformation")]
+    def run(self, dispatcher: CollectingDispatcher, tracker, domain):
+        print("物理")
+        input_message = tracker.latest_message.get('text').strip()
+        conversation_rounds = tracker.get_slot('conversation_rounds') or 0
+        continue_conversation = tracker.get_slot('continue_conversation') or True
 
-        if text == "溫度與熱量" :
-            dispatcher.utter_message(
-                text="你選擇了溫度與熱量。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 溫度\n"
-                     "2. 熱"
-            )
-            return [SlotSet("subtopic", "temperature_and_heat")]
+        if not continue_conversation:
+            return []
 
-        if text == "力與運動" :
-            dispatcher.utter_message(
-                text="你選擇了力與運動。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 運動分析\n"
-                     "2. 力的作用\n"
-                     "3. 摩擦力"
-            )
-            return [SlotSet("subtopic", "force_and_motion")]
+        conversation_rounds += 1
+        dispatcher.utter_message(text="哈囉，我是你的物理主題小幫手！")
 
-        if text == "宇宙與天體" :
-            dispatcher.utter_message(
-                text="你選擇了宇宙與天體。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 古典物理學發展簡史-宇宙與天體\n"
-                     "2. 現代物理的發展-宇宙與天體"
-            )
-            return [SlotSet("subtopic", "universe_and_celestial")]
+        if input_message.lower() == "不需要":
+            dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
+            return self.end_conversation()
 
-        if text == "萬有引力" :
-            dispatcher.utter_message(
-                text="你選擇了萬有引力。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 萬有引力的應用"
-                )
-            return [SlotSet("subtopic", "gravitation")]
+        print(f"對話輪數1：{conversation_rounds}")
 
-        if text == "波動、光及聲音" :
-            dispatcher.utter_message(
-                text="你選擇了波動、光及聲音。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 波的現象\n"
-                     "2. 聲音的發生與傳播\n"
-                     "3. 聲波的應用\n"
-                     "4. 光的反射及面鏡成像\n"
-                     "5. 光的折射及透鏡成像\n"
-                     "6. 光與生活"
-            )
-            return [SlotSet("subtopic", "waves_light_sound")]
+        url = "http://ml.hsueh.tw/callapi/"
+        data = {
+            "engine": "gpt-35-turbo",
+            "temperature": 0.7,
+            "max_tokens": 300,
+            "top_p": 0.95,
+            "top_k": 5,
+            "roles": [{"role": "system", "content": 
+                "1. 任務描述：你的關鍵任務是利用以下物理主題幫助學生找到感興趣的研究主題。"
+                "你會通過提問和討論這些主題，引導學生探索並深化他們對物理學的興趣和理解。"
+                "2. 知識範圍限制：你僅專注於物理學相關的知識。在每次與使用者互動前，你將評估問題是否與物理學相關。"
+                "對於非物理相關的問題，你將友善地回應「這個問題超出了我的專業範圍，但我們可以討論其他物理相關的主題。」"
+                "3. 物理學範圍：你的討論和回答將涵蓋以下物理學主題："
+                    "物理-能量的形式與轉換、溫度與熱量、力與運動、宇宙與天體、萬有引力、波動、光及聲音、電磁現象、量子現象、物理在生活中的應用"
+                "4. 互動範例："
+                    "當使用者提出：「我覺得酸鹼中和很有趣。」"
+                    "因為與「物理」無關，所以回覆：「這個問題超出了我的專業範圍，但我們可以討論物理中的萬有引力如何影響天體運動。你對此感興趣嗎？」"
+                    "回覆不要超過100字"},
+                    {"role": "user", "content": input_message}],
+            "frequency_penalty": 0,
+            "repetition_penalty": 1.03,
+            "presence_penalty": 0,
+            "stop": "",
+            "past_messages": 10,
+            "purpose": "dev"
+        }
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
 
-        if text == "電磁現象" :
-            dispatcher.utter_message(
-                text="你選擇了電磁現象。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 靜電與庫侖定律\n"
-                     "2. 電流\n"
-                     "3. 電流磁效應\n"
-                     "4. 電磁感應現象及應用\n"
-                     "5. 電磁波"
-            )
-            return [SlotSet("subtopic", "electromagnetism")]
+        try:
+            response = requests.post(url, json=data, headers=headers)
+            print(f"對話輪數2：{conversation_rounds}")
+            response.raise_for_status()
+            message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
+            dispatcher.utter_message(text=message_content)
+        except requests.RequestException as error:
+            dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
+            return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
-        if text == "量子現象" :
-            dispatcher.utter_message(
-                text="你選擇了量子現象。請問你對以下哪個主題內容更感興趣。\n"
-                     "1. 現代物理的發展-量子現象\n"
-                     "2. 物理在生活中的應用-量子現象"
-            )
-            return [SlotSet("subtopic", "quantum_phenomena")]
+        # API請求成功之後，才增加對話回合數
+        conversation_rounds += 1
 
-        if text == "物理在生活中的應用" :
-            dispatcher.utter_message(
-                text="你選擇了物理在生活中的應用。請問你對以下哪個主題內容更感興趣。\n"
-                "1. 物理在生活中的應用-科學\n"
-                "2. 物理在生活中的應用-技術\n"
-                "3. 物理在生活中的應用-社會"
-                )
-            return [SlotSet("subtopic", "physics_in_life_applications")]
+        if conversation_rounds >= 6:
+            dispatcher.utter_message(text="看來我們已經討論了很多！如果你有其他問題，隨時可以問我。")
+            return self.end_conversation()
 
-        return []
+        # 如果未達到3回合，繼續對話
+        return [SlotSet("conversation_rounds", conversation_rounds),
+                SlotSet("continue_conversation", True)]
+
+    def end_conversation(self):
+        return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
 # 生物
 class ActionExploreBiologyTopic(Action):

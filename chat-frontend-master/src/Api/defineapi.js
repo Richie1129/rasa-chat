@@ -20,14 +20,14 @@ export const fetchDefine = async (inputMessage) => {
       console.log(content)
       const url2 = "http://ml.hsueh.tw/callapi/";
       const data2 = {
-        engine: "gpt-35-turbo",
+        engine: "taide-llama-3",
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 300,
         top_p: 0.95,
         top_k: 5,
         roles: [
           { role: "system", content: content },
-          { role: "user", content: "請根據內容，利用100字摘要，不要出現「本文介紹」，回答只能使用繁體中文，對話的風格要像是學習夥伴間在對話。"}
+          { role: "user", content: "請根據內容，利用100字摘要，不要出現「本文介紹」，回答只能使用繁體中文。"}
         ],
         frequency_penalty: 0,
         repetition_penalty: 1.03,

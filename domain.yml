@@ -91,6 +91,19 @@ slots:
     mappings:
       - type: from_entity
         entity: subtopic
+  
+  continue_conversation:
+    type: bool
+    influence_conversation: true
+    mappings:
+      - type: custom
+
+  conversation_rounds:
+    type: float
+    influence_conversation: false
+    initial_value: 0
+    mappings:
+      - type: custom
 
 session_config:
   session_expiration_time: 60
