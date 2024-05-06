@@ -1,0 +1,125 @@
+# version: "3.1"
+
+# rules:
+- rule: Persistent topic exploration
+  condition:
+    - slot_was_set:
+        - science_discipline: null
+        - continue_conversation: true
+  steps:
+    - action: action_explore_topic
+    - intent: nlu_fallback
+    - action: action_explore_topic
+    - action: action_explore_topic
+
+# - rule: Persistent chemistry topic exploration
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "chemistry"
+#         - continue_conversation: true
+#   steps:
+#     - action: action_explore_chemistry_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_chemistry_topic
+#     - action: action_explore_chemistry_topic
+
+# - rule: Persistent physics topic exploration
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "physics"
+#         - continue_conversation: true
+#   steps:
+#     - intent: inform
+#     - action: action_explore_physics_topic
+#     - action: action_listen
+
+# - rule: Persistent biology topic exploration
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "biology"
+#         - continue_conversation: true
+#   steps:
+#     - action: action_explore_biology_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_biology_topic
+#     - action: action_explore_biology_topic
+
+# - rule: Persistent earth science topic exploration
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "earth science"
+#         - continue_conversation: true
+#   steps:
+#     - action: action_listen
+#     - action: action_explore_earth_science_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_earth_science_topic
+#     - action: action_explore_earth_science_topic
+
+# # 處理科目選擇後的動作
+# - rule: Save Science Discipline
+#   condition:
+#     - active_loop: null
+#   steps:
+#     - intent: choose_discipline
+#     - action: action_save_science_discipline
+
+# # 處理化學主題選擇後的動作
+# - rule: Save Chemistry Topic
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "chemistry"
+#   steps:
+#     - intent: choose_chemistry_topic
+#     - action: action_explore_chemistry_topic
+
+# # 處理物理主題選擇後的動作
+# - rule: Save Physics Topic
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "physics"
+#   steps:
+#     - intent: choose_physics_topic
+#     - action: action_explore_physics_topic
+
+# - rule: 繼續探討物理主題
+#   condition:
+#     - slot_was_set:
+#         - continue_conversation: true
+#   steps:
+#     - action: action_explore_physics_topic
+#     - action: action_listen
+
+# # 處理生物主題選擇後的動作
+# - rule: Save Biology Topic
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "biology"
+#   steps:
+#     - intent: choose_biology_topic
+#     - action: action_explore_biology_topic
+
+# # 處理地科選擇後的動作
+# - rule: Save Earth Science Topic
+#   condition:
+#     - slot_was_set:
+#         - science_discipline: "earth science"
+#   steps:
+#     - intent: choose_earth_science_topic
+#     - action: action_explore_earth_science_topic
+
+# # 處理子主題選擇後的動作
+# - rule: Explore Science Subtopic
+#   condition:
+#     - slot_was_set:
+#         - subtopic: true
+#   steps:
+#     - intent: choose_subtopic
+#     - action: action_save_subtopic
+#     - action: action_reset_subtopic  # 讓Rasa等待下一個用戶輸入並判斷意圖
+
+
+# - rule: Fallback rule
+#   steps:
+#   - intent: nlu_fallback
+#   - action: utter_please_rephrase

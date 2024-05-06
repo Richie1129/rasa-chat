@@ -1,0 +1,94 @@
+version: "3.1"
+
+stories:
+
+- story: greet
+  steps:
+  - intent: greet
+  - action: utter_greet
+
+- story: check topic exist
+  steps:
+  - intent: confirm_existing_topic
+  - action: action_clear_slots
+  - action: action_handle_topic
+
+- story: No Idea
+  steps:
+  - intent: no_idea_for_decision_tree
+  - action: action_start_decision_tree
+  - action: action_check_slots
+
+- story: Explore Science Topic
+  steps:
+    - intent: choose_discipline
+    - action: action_save_science_discipline
+    - slot_was_set:
+        - science_discipline: null  # 此處使用 null 表示動態值
+    - intent: choose_topic
+    - action: action_explore_topic
+    - slot_was_set:
+        - topic: null  # 此處使用 null 表示動態值
+    - intent: nlu_fallback
+    - action: action_explore_topic
+
+# - story: Chemistry topic selection
+#   steps:
+#     - intent: choose_discipline
+#       entities:
+#           - science_discipline: "chemistry"
+#     - action: action_save_science_discipline
+#     - intent: choose_chemistry_topic
+#     - action: action_explore_chemistry_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_chemistry_topic
+
+# - story: Physics topic selection
+#   steps:
+#     - intent: choose_discipline
+#       entities:
+#         - science_discipline: "physics"
+#     - action: action_save_science_discipline
+#     - intent: choose_physics_topic
+#     - action: action_explore_physics_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_physics_topic
+
+# - story: Biology topic selection
+#   steps:
+#     - intent: choose_discipline
+#       entities:
+#         - science_discipline: "biology"
+#     - action: action_save_science_discipline
+#     - intent: choose_biology_topic
+#     - action: action_explore_biology_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_biology_topic
+    
+# - story: Earth Science topic selection
+#   steps:
+#     - intent: choose_discipline
+#       entities:
+#         - science_discipline: "earth_science"
+#     - action: action_save_science_discipline
+#     - intent: choose_earth_science_topic
+#     - action: action_explore_earth_science_topic
+#     - intent: nlu_fallback
+#     - action: action_explore_earth_science_topic
+
+# - story: Detailed subtopic exploration for research
+#   steps:
+#     - intent: research_subtopic
+#       entities:
+#         - subtopic: "{{subtopic}}"
+#     - action: utter_topic
+
+- story: more info
+  steps:
+    - intent: user_responds_to_topic
+    - action: action_rag_5W1H
+
+- story: 科學名詞定義/為什麼
+  steps:
+    - intent: definition
+    - action: action_rag_abstract_explain

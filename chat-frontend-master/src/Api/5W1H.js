@@ -55,8 +55,8 @@ export const fetch5W1H = async (inputMessage) => {
               top_p: 0.95,
               top_k: 5,
               roles: [
-                { role: "system", content: content },
-                { role: "user", content: "你必須使用5W1H框架的問句，只要給我一個問題即可，不要包含任何答案。回答中不要提供任何答案。"}
+                { role: "system", content: "你必須使用5W1H框架的問句，只要給我一個問題即可，不要包含任何答案。回答中不要提供任何答案。" },
+                { role: "user", content: content}
               ],
               frequency_penalty: 0,
               repetition_penalty: 1.03,

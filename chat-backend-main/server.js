@@ -1,11 +1,11 @@
-const rooms = ['general', 'tech', 'finance', 'crypto', 'data'];
+// const rooms = ['general', 'tech', 'finance', 'crypto', 'data'];
 const express = require('express');
 const app = express();
 const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const User = require('./models/User');
-const Message = require('./models/Message');
-const Topic = require('./models/Topic'); // 引入 Topic 模型
+// const Message = require('./models/Message');
+// const Topic = require('./models/Topic'); // 引入 Topic 模型
 const Chathistory = require('./models/Chathistory');
 const Response = require('./models/Response');
 const cors = require('cors');
@@ -19,6 +19,8 @@ app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use('/users', userRoutes);
 app.use('/admin', adminRoutes);
+// Protect the chatroom route
+app.use('/chat', isAuthenticated);
 require('./connection'); // 與 MongoDB 連結
 
 const server = require('http').createServer(app);
@@ -29,6 +31,14 @@ const io = require('socket.io')(server, {
     methods: ['GET', 'POST'],
   },
 });
+
+// Middleware to check if the user is authenticated
+function isAuthenticated(req, res, next) {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+      return next();
+  }
+  res.status(401).send('未授權的訪問');
+}
 
 async function getLastMessagesFromRoom(room) {
   let roomMessages = await Message.aggregate([

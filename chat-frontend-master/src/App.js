@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Navigation from "./components/Navigation";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -7,9 +7,10 @@ import Signup from "./pages/Signup";
 import { useSelector } from "react-redux";
 import { AppContext, socket } from "./context/appContext";
 import ChatRoom from "./pages/ChatRoom";
+import Swal from 'sweetalert2';
 
 function App() {
-    const [rooms, setRooms] = useState([]);
+    // const [rooms, setRooms] = useState([]);
     const [members, setMembers] = useState([]);
     const [messages, setMessages] = useState([]);
     const [privateMemberMsg, setPrivateMemberMsg] = useState({});
@@ -73,6 +74,29 @@ function App() {
             })
             .catch(error => console.error('Error:', error));
     };
+
+    function ProtectedRoute({ children }) {
+        const user = useSelector((state) => state.user);
+    
+        if (!user) {
+            // 調用 SweetAlert2 來顯示提示
+            Swal.fire({
+                title: '請先登入',
+                text: '請登入以訪問這個頁面。',
+                icon: 'warning',
+                confirmButtonText: '好的'
+            }).then((result) => {
+                // 當用戶點擊“好的”按鈕後，再執行重定向
+                if (result.isConfirmed) {
+                    window.location.href = '/login';
+                }
+            });
+            
+            // 不渲染任何組件直到對話框被處理
+            return null;
+        }
+        return children;
+    }
  
     return (
         <AppContext.Provider value={{ socket, members, setMembers, messages, setMessages, privateMemberMsg, setPrivateMemberMsg, newMessages, setNewMessages}}>
@@ -86,7 +110,11 @@ function App() {
                             <Route path="/signup" element={<Signup />} />
                         </>
                     )}
-                    <Route path="/chat" element={<ChatRoom />} />
+                    <Route path="/chat" element={
+                        <ProtectedRoute>
+                            <ChatRoom />
+                        </ProtectedRoute>
+                    } />
                 </Routes>
             </BrowserRouter>
         </AppContext.Provider>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Row, Col, Button } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
-import { TypeAnimation } from 'react-type-animation';
+// import { TypeAnimation } from 'react-type-animation';
 import "./Home.css";
 
 function Home() {
