@@ -1,6 +1,6 @@
 # version: "3.1"
 
-# rules:
+rules:
 - rule: Persistent topic exploration
   condition:
     - slot_was_set:
@@ -11,6 +11,11 @@
     - intent: nlu_fallback
     - action: action_explore_topic
     - action: action_explore_topic
+
+- rule: chitchat
+  steps:
+    - intent: chitchat
+    - action: utter_please_rephrase
 
 # - rule: Persistent chemistry topic exploration
 #   condition:

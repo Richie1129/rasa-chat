@@ -14,14 +14,19 @@ import { fetchDefine } from '../Api/defineapi';
 // import { sendMessage, sendButtonPayload } from './app.js';  // 確保路徑正確
 
 const ChatRoom = () => {
+    const welcomeMessage = "嗨！我是一位專門輔導高中生科學探究與實作的自然科學導師。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，並引導你選擇一個有興趣的科展主題，以及更深入了解你的研究問題。今天我們來一起找出一個適合你的科學探究主題。跟我打個招呼，讓我們來探索科學的奧妙吧！";
+    
     const [messages, setMessages] = useState(() => {
-        // 嘗試從 localStorage 讀取歷史消息
         const savedMessages = localStorage.getItem('chatMessages');
-        return savedMessages ? JSON.parse(savedMessages) : [];
+        // 若本地沒有保存的消息，則顯示歡迎消息
+        return savedMessages ? JSON.parse(savedMessages) : [{
+            text: welcomeMessage, 
+            type: 'response', 
+            time: new Date().toLocaleTimeString(), 
+            date: new Date().toLocaleDateString()
+        }];
     });
     const [inputMessage, setInputMessage] = useState('');
-    const [selectedOption, setSelectedOption] = useState('');
-    const [tempMessage, setTempMessage] = useState(''); // 用於短期顯示的提示信息
     const { socket } = useContext(AppContext);
     const user = useSelector((state) => state.user);
 
@@ -40,6 +45,19 @@ const ChatRoom = () => {
     // };
 
     useEffect(() => {
+        if (messages.length === 0) {
+            // 如果聊天室沒有任何消息，則添加歡迎消息
+            setMessages([{
+                text: welcomeMessage, 
+                type: 'response', 
+                time: new Date().toLocaleTimeString(), 
+                date: new Date().toLocaleDateString()
+            }]);
+        }
+        localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }, [messages]);
+
+    useEffect(() => {
         // 監聽消息變化並更新 localStorage
         localStorage.setItem('chatMessages', JSON.stringify(messages));
     }, [messages]);
@@ -52,7 +70,7 @@ const ChatRoom = () => {
                 time: new Date().toLocaleTimeString(),
                 date: new Date().toLocaleDateString(),
                 from: user,
-                optionText: selectedOption
+                // optionText: selectedOption
             };
     
             // 這裡的 'chat-message' 需要與後端監聽的事件名稱一致
@@ -63,43 +81,43 @@ const ChatRoom = () => {
               type: 'user', 
               time: messageData.time, 
               date: messageData.date,
-              optionText: selectedOption
+            //   optionText: selectedOption
             }]);
             // 清空輸入框
             setInputMessage('');
 
-            if (selectedOption === '5W1H') {
-                const searchResult = await fetch5W1H(inputMessage);
-                if (searchResult && !searchResult.error) {
-                //   setMessages(currentMessages => [...currentMessages,{ text: '你先想想這個問題：', type: 'response' }]);
-                  if (searchResult === null) {
-                    setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
-                  } else {
-                    setMessages(currentMessages => [...currentMessages, { text: searchResult.choices[0].message.content, type: 'response' }]);
-                  }
-                } else {
-                  setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
-                  console.error('返回的數據不符合預期');
-                }
-              } else if (inputMessage.includes('我想查詢相關作品：')) {
-                const keyword = inputMessage.split('我想查詢相關作品：')[1]; // 從輸入中提取關鍵字
-                const searchResults = await fetchElasticSearchResults(keyword); // 使用提取的關鍵字進行搜索
+            // if (selectedOption === '5W1H') {
+            //     const searchResult = await fetch5W1H(inputMessage);
+            //     if (searchResult && !searchResult.error) {
+            //     //   setMessages(currentMessages => [...currentMessages,{ text: '你先想想這個問題：', type: 'response' }]);
+            //       if (searchResult === null) {
+            //         setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
+            //       } else {
+            //         setMessages(currentMessages => [...currentMessages, { text: searchResult.choices[0].message.content, type: 'response' }]);
+            //       }
+            //     } else {
+            //       setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
+            //       console.error('返回的數據不符合預期');
+            //     }
+            //   } else if (inputMessage.includes('我想查詢相關作品：')) {
+            //     const keyword = inputMessage.split('我想查詢相關作品：')[1]; // 從輸入中提取關鍵字
+            //     const searchResults = await fetchElasticSearchResults(keyword); // 使用提取的關鍵字進行搜索
             
-                if (Array.isArray(searchResults)) {
-                    searchResults.forEach(result => {
-                        setMessages(currentMessages => [...currentMessages, { text: result, type: 'response', isHTML: true }]);
-                    });
-                } else {
-                    console.error('返回的數據不是陣列');
-                }           
-            } else if (selectedOption === '科學名詞QA') {
-                const searchResult = await fetchDefine(inputMessage);
-                if (searchResult && !searchResult.error) {
-                  setMessages(currentMessages => [...currentMessages, { text: searchResult.choices[0].message.content, type: 'response' }]);
-                //   setMessages(currentMessages => [...currentMessages, { text: '你還有想要了解的問題嗎?', type: 'response' }]);
-                } else {
-                  console.error('返回的數據不符合預期');
-                }
+            //     if (Array.isArray(searchResults)) {
+            //         searchResults.forEach(result => {
+            //             setMessages(currentMessages => [...currentMessages, { text: result, type: 'response', isHTML: true }]);
+            //         });
+            //     } else {
+            //         console.error('返回的數據不是陣列');
+            //     }           
+            // } else if (selectedOption === '科學名詞QA') {
+            //     const searchResult = await fetchDefine(inputMessage);
+            //     if (searchResult && !searchResult.error) {
+            //       setMessages(currentMessages => [...currentMessages, { text: searchResult.choices[0].message.content, type: 'response' }]);
+            //     //   setMessages(currentMessages => [...currentMessages, { text: '你還有想要了解的問題嗎?', type: 'response' }]);
+            //     } else {
+            //       console.error('返回的數據不符合預期');
+            //     }
                 // const techResult = await fetchTechCsv(inputMessage);
                 // if (techResult.response && techResult.response !== 'API請求失敗' && techResult.response !== 'API請求過程中發生錯誤') {
                 //     setMessages(currentMessages => [
@@ -123,7 +141,8 @@ const ChatRoom = () => {
                 // } else {
                 //     console.error('API請求失敗或發生錯誤');
                 // } 
-            } else if (selectedOption === '探究主題') {
+            // }
+            // else if (selectedOption === '探究主題') {
                 // // 判斷是否有研究主題並選擇對應的 Rasa 端點
                 // if (isFirstMessage) {
                 //     // 只在第一次輸入時判斷是否有研究主題
@@ -202,7 +221,7 @@ const ChatRoom = () => {
                 } catch (error) {
                     console.error('與 Rasa 通信過程中出現錯誤：', error);
                 }
-            }
+            // }
         }
     };
 
@@ -217,51 +236,51 @@ const ChatRoom = () => {
         setMessages([]);
     };
 
-    const handleOptionSelect = (option) => {
-        console.log("選擇的選項:", option);
-        let optionText = "";
-        let welcomeMessage = "";
-        switch (option) {
-            case "option1":
-                optionText = "探究主題";
-                Swal.fire({
-                    title: "尋找探究主題",
-                    text: "在這邊你可以探索你有興趣或是想研究的探究主題！",
-                    icon: "info"
-                  });
-                welcomeMessage = "嗨！我是一位專門輔導高中生科學探究與實作的自然科學導師。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，並引導你選擇一個有興趣的科展主題，以及更深入了解你的研究問題。今天我們來一起找出一個適合你的科學探究主題。還是你已經有研究主題了呢？";
-                break;
-                case "option2":
-                    optionText = "科學名詞QA";
-                    Swal.fire({
-                        title: "科學名詞QA",
-                        text: "在這邊解釋你想知道的科學名詞定義或是對現象感到好奇，我都可以幫你解答喔！",
-                        icon: "info"
-                      });
-                      welcomeMessage = "嗨，你有想知道的科學名詞定義不清楚的或是你對什麼現象感到好奇，我都可以幫你解答喔！";
-                    break;
-                case "option3":
-                    optionText = "5W1H";
-                    Swal.fire({
-                        title: "5W1H",
-                        text: "5W1H",
-                        icon: "info"
-                      });
-                    welcomeMessage = "嗨，你可以提出研究主題時利用5W1H的問題來引導你思考！";
-                      break;
-                default:
-                    optionText = "";
-            }
-        setSelectedOption(optionText);
-        setMessages([]); // 清空現有訊息
-        if (welcomeMessage) {
-            // 使用setTimeout延遲訊息的顯示
-            setTimeout(() => {
-                setMessages([{ text: welcomeMessage, type: 'response', time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() }]);
-            }, 1000); // 延遲500毫秒
-        }
-        setTempMessage(optionText); // 設置短期顯示的提示信息
-    };
+    // const handleOptionSelect = (option) => {
+    //     console.log("選擇的選項:", option);
+    //     let optionText = "";
+    //     let welcomeMessage = "";
+    //     switch (option) {
+    //         case "option1":
+    //             optionText = "探究主題";
+    //             Swal.fire({
+    //                 title: "尋找探究主題",
+    //                 text: "在這邊你可以探索你有興趣或是想研究的探究主題！",
+    //                 icon: "info"
+    //               });
+    //             welcomeMessage = "嗨！我是一位專門輔導高中生科學探究與實作的自然科學導師。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，並引導你選擇一個有興趣的科展主題，以及更深入了解你的研究問題。今天我們來一起找出一個適合你的科學探究主題。還是你已經有研究主題了呢？";
+    //             break;
+    //             case "option2":
+    //                 optionText = "科學名詞QA";
+    //                 Swal.fire({
+    //                     title: "科學名詞QA",
+    //                     text: "在這邊解釋你想知道的科學名詞定義或是對現象感到好奇，我都可以幫你解答喔！",
+    //                     icon: "info"
+    //                   });
+    //                   welcomeMessage = "嗨，你有想知道的科學名詞定義不清楚的或是你對什麼現象感到好奇，我都可以幫你解答喔！";
+    //                 break;
+    //             case "option3":
+    //                 optionText = "5W1H";
+    //                 Swal.fire({
+    //                     title: "5W1H",
+    //                     text: "5W1H",
+    //                     icon: "info"
+    //                   });
+    //                 welcomeMessage = "嗨，你可以提出研究主題時利用5W1H的問題來引導你思考！";
+    //                   break;
+    //             default:
+    //                 optionText = "";
+    //         }
+    //     setSelectedOption(optionText);
+    //     setMessages([]); // 清空現有訊息
+    //     if (welcomeMessage) {
+    //         // 使用setTimeout延遲訊息的顯示
+    //         setTimeout(() => {
+    //             setMessages([{ text: welcomeMessage, type: 'response', time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() }]);
+    //         }, 1000); // 延遲500毫秒
+    //     }
+    //     setTempMessage(optionText); // 設置短期顯示的提示信息
+    // };
     
     return (
         
@@ -273,23 +292,23 @@ const ChatRoom = () => {
             <h3>聊天室介紹</h3>
                 <p>歡迎來到專為高中生設計的科學探究與實作聊天室！這裡聚焦於高中生在科學探究學習中的過程，特別關注「科學探究能力」和「自我導向學習傾向」。</p>
                 <p>在這個平台上，我們鼓勵學生通過日常生活、科學研究或課堂所學啟發，找到並深入探討他們感興趣的科學主題。</p>
-                {/* <h5>在「科學探究與實作」中，你們將學習到什麼呢？</h5>
+                <h5>在「科學探究與實作」中，你們將學習到什麼呢？</h5>
                 <p>1. 發現問題：學習從日常生活中觀察現象，提出問題。這是科學探究的起點，每一項偉大的科學發現都始於一個簡單的問題。</p>
                 <p>2. 探究問題：通過實驗、研究和分析來尋找問題的答案。你將學會如何設計實驗、收集數據並從中得出結論。</p>
-                <p>3. 批判思考與創新：鼓勵你們對現有知識提出質疑，並嘗試創新方法解決問題。這不僅僅是學習知識，更是培養獨立思考和創新能力。</p> */}
+                <p>3. 批判思考與創新：鼓勵你們對現有知識提出質疑，並嘗試創新方法解決問題。這不僅僅是學習知識，更是培養獨立思考和創新能力。</p>
             </div>
-                <div className="options">                
-                    <button onClick={() => handleOptionSelect("option1")}>探究主題</button>
+                {/* <div className="options"> */}
+                    {/* <button onClick={() => handleOptionSelect("option1")}>探究主題</button> */}
                     {/* <button onClick={() => handleOptionSelect("option2")}>科學名詞QA</button> */}
                     {/* <button onClick={() => handleOptionSelect("option3")}>5W1H</button> */}
-                </div>
+                {/* </div> */}
                 <div>
                     <DialogBox onScaffoldClick={setInputMessage} />
                 </div>
             </div>
             <div className="right-panel">
-                <div className="selected-option">{selectedOption}</div>
-                {tempMessage && <div className="temp-message">{tempMessage}</div>}
+                {/* <div className="selected-option">{selectedOption}</div>
+                {tempMessage && <div className="temp-message">{tempMessage}</div>} */}
                 <div className="messages">
                     {messages.map((message, index) => (
                         <div key={index} className={`message ${message.type === 'user' ? 'user-message' : 'response-message'}`}>

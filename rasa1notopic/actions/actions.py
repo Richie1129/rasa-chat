@@ -19,6 +19,7 @@ from rasa_sdk.events import SlotSet
 from rasa_sdk.events import FollowupAction
 import requests
 import re
+import random
 
 # 最後3則訊息
 def get_last_three_messages(tracker: Tracker):
@@ -223,7 +224,7 @@ class ActionStartDecisionTree(Action):
     def run(self, dispatcher, tracker, domain):
         print("決策樹/科目")
         dispatcher.utter_message(
-            text="首先，讓我們來確定一個研究主題，你對以下哪一個科目感興趣？\n"
+            text="你好呀，首先，讓我們來確定一個研究主題，你對以下哪一個科目感興趣？\n"
             "請輸入：物理、化學、地科或生物。"
             )
         return []
@@ -258,19 +259,44 @@ class ActionSaveScienceDiscipline(Action):
                 "永續發展與資源的利用", "氣候變遷之影響與調適"
             ]
         }
+        
+        interest_messages = [
+            "太好了！你對{}感興趣。這是一個極其精彩的領域。",
+            "很棒的選擇！{}是個迷人的科目，我們有很多話題可以探討。",
+            "{}是一個非常有趣的領域，讓我們看看有哪些吸引人的主題吧！"
+        ]
 
-        # 檢查用戶輸入是否匹配已知學科
+        matched_discipline = None
         for discipline, topics in disciplines_topics.items():
-            if re.fullmatch(discipline, text):
+            if re.search(discipline, text, re.IGNORECASE):
+                matched_discipline = discipline
                 topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics)])
-                dispatcher.utter_message(
-                    text=f"你對{discipline}這個科目感興趣。請問你想探究{discipline}的哪個主題，選擇下列主題進一步探討：\n{topics_formatted}"
-                )
-                return [FollowupAction("action_clear_slots"),SlotSet("science_discipline", discipline)]
+                break
+
+        if matched_discipline:
+            selected_message = random.choice(interest_messages).format(matched_discipline)
+            dispatcher.utter_message(text=selected_message)
+            dispatcher.utter_message(
+                text=f"在{matched_discipline}裡面，我們可以探討許多有趣的主題。以下是一些選項，你想深入了解哪一個？\n{topics_formatted}"
+            )
+            return [FollowupAction("action_clear_slots"), SlotSet("science_discipline", matched_discipline)]
 
         # 如果沒有匹配到任何學科
-        dispatcher.utter_message(text="不好意思，我沒有理解你的意思。你能說得更具體一點嗎？")
+        dispatcher.utter_message(text="看起來我們沒有找到對應的科目。能再具體點嗎？或者換個科目試試？")
         return []
+
+        # # 檢查用戶輸入是否匹配已知學科
+        # for discipline, topics in disciplines_topics.items():
+        #     if re.fullmatch(discipline, text):
+        #         topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics)])
+        #         dispatcher.utter_message(
+        #             text=f"你對{discipline}這個科目感興趣。請問你想探究{discipline}的哪個主題，選擇下列主題進一步探討：\n{topics_formatted}"
+        #         )
+        #         return [FollowupAction("action_clear_slots"),SlotSet("science_discipline", discipline)]
+
+        # # 如果沒有匹配到任何學科
+        # dispatcher.utter_message(text="不好意思，我沒有理解你的意思。你能說得更具體一點嗎？")
+        # return []
 
 # 定題
 class ActionExploreTopic(Action):
@@ -288,69 +314,129 @@ class ActionExploreTopic(Action):
 
         if conversation_rounds == 0:
             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
+            input_message = tracker.latest_message.get('text').strip()
+        else:
+            # 獲取最後三條用戶的訊息作為上下文
+            all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
+            print(f"對話內容：{all_user_messages}")
+            input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
 
         if input_message.lower() == "不需要":
             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
             return self.end_conversation()
 
-        url = "http://ml.hsueh.tw/callapi/"
+        url = "http://ml.hsueh.tw:8787/generate-text/"
         data = {
-            "engine": "gpt-35-turbo",
-            "temperature": 0.7,
-            "max_tokens": 300,
-            "top_p": 0.95,
-            "top_k": 5,
-            "roles": [{"role": "system", "content": 
-                "1.你的關鍵任務是透過「提問」和討論，利用以下自然科學主題幫助學生找到感興趣的研究主題，包括「什麼」、「如何」和「為什麼」的問題。不斷利用問題來引導學生探索並深化他們對自然科學的興趣和理解。"
-                "2.知識範圍限制： 你專注於自然科學相關的知識。在每次與使用者互動前，你將評估問題是否與「自然科學」相關。對於非自然科學相關的問題，你將友善地回應「這個問題超出了我的專業範圍，但我們可以討論其他與自然科學相關的主題。」"
-                "3.自然科學範圍： 你的討論和回答將涵蓋以下主題："
-                "物理：能量的形式與轉換、溫度與熱量、力與運動、宇宙與天體、萬有引力、波動、光及聲音、電磁現象、量子現象、物理在生活中的應用。"
-                "化學：能量的形式與轉換、物質的分離與鑑定、物質的結構與功能、組成地球的物質、水溶液中的變化、氧化與還原反應、酸鹼反應、科學在生活中的應用。"
-                "生物：生殖與遺傳、演化、生物多樣性、基因改造。"
-                "地科：天氣與氣候變化、晝夜與季節、天然災害與防治、永續發展與資源的利用、氣候變遷之影響與調適。"      
-                "回覆不要超過100字"},
-                {"role": "user", "content": input_message}],
-            "frequency_penalty": 0,
-            "repetition_penalty": 1.03,
-            "presence_penalty": 0,
-            "stop": "",
-            "past_messages": 10,
-            "purpose": "dev"
+            "prompt": input_message
         }
         headers = {
-            'Accept': 'application/json',
+            'accept': 'application/json', 
             'Content-Type': 'application/json'
-        }
+            }
 
         try:
             response = requests.post(url, json=data, headers=headers)
             print(f"對話輪數：{conversation_rounds}")
-            response.raise_for_status()
-            message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
-            # dispatcher.utter_message(text=message_content)
-        except requests.RequestException as error:
+            response_data = response.json()
+            dispatcher.utter_message(text=response_data['response'])
+        except requests.RequestException:
             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
-        # API請求成功之後，才增加對話回合數
         conversation_rounds += 1
-
         if conversation_rounds >= 4:
-            # dispatcher.utter_message(text="看來我們已經討論了很多！如果你有其他問題，隨時可以問我。")
             return [FollowupAction("action_research_question"), self.end_conversation()]
-        
-        dispatcher.utter_message(text=message_content)
 
-        # 如果未達到8回合，繼續對話
-        return [SlotSet("conversation_rounds", conversation_rounds),
-                SlotSet("continue_conversation", True)]
+        return [SlotSet("conversation_rounds", conversation_rounds), SlotSet("continue_conversation", True)]
         
-    # 結束對話
     def end_conversation(self):
-        print("結束對話")
         return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
     
+# # 定題
+# class ActionExploreTopic(Action):
+#     def name(self):
+#         return "action_explore_topic"
     
+#     def run(self, dispatcher: CollectingDispatcher, tracker, domain):
+#         print("定題小幫手")
+#         input_message = tracker.latest_message.get('text').strip()
+#         conversation_rounds = tracker.get_slot('conversation_rounds') or 0
+#         continue_conversation = tracker.get_slot('continue_conversation') or True
+
+#         if not continue_conversation:
+#             return []
+
+#         if conversation_rounds == 0:
+#             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
+#             input_message = tracker.latest_message.get('text').strip()
+#         else:
+#             # 獲取最後三條用戶的訊息作為上下文
+#             all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
+#             print(f"對話內容：{all_user_messages}")
+#             input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
+
+#         if input_message.lower() == "不需要":
+#             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
+#             return self.end_conversation()
+
+#         url = "http://ml.hsueh.tw/callapi/"
+#         data = {
+#             "engine": "gpt-35-turbo",
+#             "temperature": 0.7,
+#             "max_tokens": 300,
+#             "top_p": 0.95,
+#             "top_k": 5,
+#             "roles": [{"role": "system", "content": 
+#                 "1.你的關鍵任務是透過「提問」和討論，利用以下自然科學主題幫助學生找到感興趣的研究主題，包括「什麼」、「如何」和「為什麼」的問題。不斷利用問題來引導學生探索並深化他們對自然科學的興趣和理解。"
+#                 "2.知識範圍限制： 你專注於自然科學相關的知識。在每次與使用者互動前，你將評估問題是否與「自然科學」相關。對於非自然科學相關的問題，你將友善地回應「這個問題超出了我的專業範圍，但我們可以討論其他與自然科學相關的主題。」"
+#                 "3.自然科學範圍： 你的討論和回答將涵蓋以下主題："
+#                 "物理：能量的形式與轉換、溫度與熱量、力與運動、宇宙與天體、萬有引力、波動、光及聲音、電磁現象、量子現象、物理在生活中的應用。"
+#                 "化學：能量的形式與轉換、物質的分離與鑑定、物質的結構與功能、組成地球的物質、水溶液中的變化、氧化與還原反應、酸鹼反應、科學在生活中的應用。"
+#                 "生物：生殖與遺傳、演化、生物多樣性、基因改造。"
+#                 "地科：天氣與氣候變化、晝夜與季節、天然災害與防治、永續發展與資源的利用、氣候變遷之影響與調適。"      
+#                 "回覆不要超過100字"},
+#                 {"role": "user", "content": input_message}],
+#             "frequency_penalty": 0,
+#             "repetition_penalty": 1.03,
+#             "presence_penalty": 0,
+#             "stop": "",
+#             "past_messages": 10,
+#             "purpose": "dev"
+#         }
+#         headers = {
+#             'Accept': 'application/json',
+#             'Content-Type': 'application/json'
+#         }
+
+#         try:
+#             response = requests.post(url, json=data, headers=headers)
+#             print(f"對話輪數：{conversation_rounds}")
+#             response.raise_for_status()
+#             message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
+#             # dispatcher.utter_message(text=message_content)
+#         except requests.RequestException as error:
+#             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
+#             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
+
+#         # API請求成功之後，才增加對話回合數
+#         conversation_rounds += 1
+
+#         if conversation_rounds >= 4:
+#             # dispatcher.utter_message(text="看來我們已經討論了很多！如果你有其他問題，隨時可以問我。")
+#             return [FollowupAction("action_research_question"), self.end_conversation()]
+        
+#         dispatcher.utter_message(text=message_content)
+
+#         # 如果未達到8回合，繼續對話
+#         return [SlotSet("conversation_rounds", conversation_rounds),
+#                 SlotSet("continue_conversation", True)]
+        
+#     # 結束對話
+#     def end_conversation(self):
+#         print("結束對話")
+#         return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
+    
+# 給研究問題   
 class ActionResearchQuestion(Action):
     def name(self) -> Text:
         return "action_research_question"
@@ -451,21 +537,14 @@ class ActionSaveSubtopic(Action):
             print('API請求失敗或發生錯誤')
 
         return []
-
-class ActionResetSubtopic(Action):
-    def name(self):
-        return "action_reset_subtopic"
-
-    async def run(self, dispatcher, tracker, domain):
-        # 清除subtopic插槽的值
-        return [SlotSet("subtopic", None)]
-    
+  
 # 檢查 slots 狀態
 class ActionCheckSlots(Action):
     def name(self):
         return "action_check_slots"
 
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain):
+        print("檢查slots_1")
         slots_info = {
             "has_topic": tracker.get_slot('has_topic'),
             "topic": tracker.get_slot('topic'),
@@ -481,9 +560,15 @@ class ActionClearSlots(Action):
         print("清除slot")
         return "action_clear_slots"
 
-    def run(self, dispatcher: CollectingDispatcher,
-            tracker: Tracker,
-            domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+    def run(self, dispatcher: CollectingDispatcher,tracker: Tracker,domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
+        print("檢查slots_2")
+        slots_info = {
+            "has_topic": tracker.get_slot('has_topic'),
+            "topic": tracker.get_slot('topic'),
+            "science_discipline": tracker.get_slot('science_discipline'),
+            "continue_conversation": tracker.get_slot('continue_conversation')
+        }
+        print(slots_info)
         
         # 清除所有的 slots
         return [SlotSet(slot, None) for slot in tracker.slots]

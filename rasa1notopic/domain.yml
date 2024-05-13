@@ -1,8 +1,8 @@
 version: '3.1'
 intents:
 - greet
-- confirm_existing_topic
-- no_idea_for_decision_tree
+# - confirm_existing_topic
+# - no_idea_for_decision_tree
 - nlu_fallback
 - choose_discipline
 - choose_topic
@@ -14,20 +14,21 @@ intents:
 - user_responds_to_topic
 # - research_subtopic
 - definition
+- chitchat
 
 responses:
-  utter_greet:
-  - text: 你好，需要什麼幫助呢？
+  # utter_greet:
+  # - text: 你好，需要什麼幫助呢？
   # utter_topic:
   # - text: 為什麼你會想研究這個主題，還是你想要了解什麼呢？
   utter_please_rephrase:
   - text: 你好，需要什麼幫助呢？如果不知道怎麼提問的話，可以多善用左下角的提問小幫手唷！
 
 actions:
-- utter_greet
+# - utter_greet
 # - utter_topic
-- utter_no_idea_check
-- action_handle_topic
+# - utter_no_idea_check
+# - action_handle_topic
 - utter_please_rephrase
 - action_start_decision_tree
 - action_save_science_discipline
@@ -36,11 +37,9 @@ actions:
 # - action_explore_physics_topic
 # - action_explore_biology_topic
 # - action_explore_earth_science_topic
-- action_save_subtopic
-- action_reset_subtopic
-- action_rag_abstract_explain
-- action_rag_5W1H
-- action_faq_answering
+# - action_save_subtopic
+# - action_rag_abstract_explain
+# - action_rag_5W1H
 - action_check_slots
 - action_clear_slots
 - action_research_question
@@ -50,7 +49,6 @@ entities:
   - research_question
   - topic
   - science_discipline
-  - reason
   # - subtopic
 
 slots:
