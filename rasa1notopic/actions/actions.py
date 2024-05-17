@@ -270,7 +270,8 @@ class ActionSaveScienceDiscipline(Action):
         for discipline, topics in disciplines_topics.items():
             if re.search(discipline, text, re.IGNORECASE):
                 matched_discipline = discipline
-                topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics)])
+                topics_randomized = random.sample(topics, len(topics))  # 隨機排列主題
+                topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics_randomized)])
                 break
 
         if matched_discipline:
@@ -282,7 +283,7 @@ class ActionSaveScienceDiscipline(Action):
             return [FollowupAction("action_clear_slots"), SlotSet("science_discipline", matched_discipline)]
 
         # 如果沒有匹配到任何學科
-        dispatcher.utter_message(text="看起來我們沒有找到對應的科目。能再具體點嗎？或者換個科目試試？")
+        dispatcher.utter_message(text="看起來我們沒有找到對應的科目。能再具體點嗎？")
         return []
 
         # # 檢查用戶輸入是否匹配已知學科
@@ -315,11 +316,11 @@ class ActionExploreTopic(Action):
         if conversation_rounds == 0:
             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
             input_message = tracker.latest_message.get('text').strip()
-        else:
-            # 獲取最後三條用戶的訊息作為上下文
-            all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
-            print(f"對話內容：{all_user_messages}")
-            input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
+        # else:
+        #     # 獲取最後三條用戶的訊息作為上下文
+        #     all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
+        #     print(f"對話內容：{all_user_messages}")
+        #     input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
 
         if input_message.lower() == "不需要":
             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
@@ -459,9 +460,9 @@ class ActionResearchQuestion(Action):
 
         url = "http://ml.hsueh.tw/callapi/"
         data = {
-            "engine": "gpt-35-turbo",
+            "engine": "taide-llama-3",
             "temperature": 0.7,
-            "max_tokens": 300,
+            "max_tokens": 500,
             "top_p": 0.95,
             "top_k": 5,
             "roles": [

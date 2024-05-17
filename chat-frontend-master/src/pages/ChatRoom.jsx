@@ -153,14 +153,19 @@ const ChatRoom = () => {
                 //     console.log("isFirstMessage",isFirstMessage)
                 // }
                 // console.log("rasaEndpoint",rasaEndpoint);
-                const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook';
-
+                const rasaEndpoint = 'http://140.115.126.232:5005/webhooks/rest/webhook'; // 使用代理路径
+                // const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook'; // 使用代理路径
+                
                 try {
                     const response = await fetch(rasaEndpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ message: inputMessage, sender: 'user'})
                     });
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
                     const rasaMessages = await response.json();
                     // // 處理API回應
                         // if (response && response.trim() !== '') {

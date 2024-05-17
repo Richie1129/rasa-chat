@@ -4,13 +4,13 @@ import Robot from "../assets/Robot.json";
 
 function DialogBox({ onScaffoldClick }) {
   const scaffoldOptions = [
-    '我想研究...',
+    // '我想研究...',
     '什麼是...?',
     // '我對...感到好奇',
     '我想要了解',
     '我想要了解為什麼...?',
-    '我還沒有研究主題',
-    '我的研究問題是：... ?',
+    // '我還沒有研究主題',
+    // '我的研究問題是：... ?',
     '我想查詢相關作品：請輸入關鍵字',
   ];
 

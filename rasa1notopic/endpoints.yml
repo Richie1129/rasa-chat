@@ -12,6 +12,9 @@
 
 action_endpoint:
   url: "http://localhost:5055/webhook"
+  # cors:
+  #   - "http://localhost:3000"
+  #   - "http://140.115.126.232:3000"
   
 # Tracker store which is used to store the conversations.
 # By default the conversations are stored in memory.

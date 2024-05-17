@@ -1,15 +1,15 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// define a service user a base URL
+// 定義一個基礎的 API 服務，使用代理
 
 const appApi = createApi({
     reducerPath: "appApi",
     baseQuery: fetchBaseQuery({
-        baseUrl: "http://localhost:5001",
+        baseUrl: "/api/express",
     }),
 
     endpoints: (builder) => ({
-        // creating the user
+        // 創建用戶
         signupUser: builder.mutation({
             query: (user) => ({
                 url: "/users",
@@ -18,7 +18,7 @@ const appApi = createApi({
             }),
         }),
 
-        // login
+        // 登入
         loginUser: builder.mutation({
             query: (user) => ({
                 url: "/users/login",
@@ -27,8 +27,7 @@ const appApi = createApi({
             }),
         }),
 
-        // logout
-
+        // 登出
         logoutUser: builder.mutation({
             query: (payload) => ({
                 url: "/logout",
@@ -37,8 +36,7 @@ const appApi = createApi({
             }),
         }),
 
-        // Wordcloud
-
+        // 文字雲
         // wordCloud: builder.mutation({
         //     query: (payload) => ({
         //         url: "/admin/wordCloud",
