@@ -35,6 +35,38 @@ stories:
     - intent: nlu_fallback
     - action: action_explore_topic
 
+# - story: Explore Science Topic
+#   steps:
+#     - intent: choose_discipline
+#     - action: action_save_science_discipline
+#     - slot_was_set:
+#         - science_discipline: null  # 此處使用 null 表示動態值
+#     - checkpoint: conversation_start
+
+# - story: Continue Exploring Topic
+#   steps:
+#     - checkpoint: conversation_start
+#     - or:
+#       - intent: choose_topic
+#       - intent: definition
+#       - intent: user_responds_to_topic
+#     - action: action_explore_topic
+#     - slot_was_set:
+#         - topic: null  # 此處使用 null 表示動態值
+#     - checkpoint: continue_conversation
+
+# - story: Handle Fallback
+#   steps:
+#     - checkpoint: continue_conversation
+#     - intent: nlu_fallback
+#     - action: action_explore_topic
+#     - checkpoint: conversation_start
+
+- story: Student Response
+  steps:
+    - intent: student_response
+    - action: action_explore_topic
+
 # - story: Chemistry topic selection
 #   steps:
 #     - intent: choose_discipline

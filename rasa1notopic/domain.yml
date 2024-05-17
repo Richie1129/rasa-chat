@@ -15,6 +15,7 @@ intents:
 # - research_subtopic
 - definition
 - chitchat
+- student_response
 
 responses:
   # utter_greet:

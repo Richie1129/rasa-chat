@@ -154,6 +154,7 @@ const ChatRoom = () => {
                 // }
                 // console.log("rasaEndpoint",rasaEndpoint);
                 const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook';
+                // const rasaEndpoint = 'http://140.115.126.232:5005/webhooks/rest/webhook';
 
                 try {
                     const response = await fetch(rasaEndpoint, {

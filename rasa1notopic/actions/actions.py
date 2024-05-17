@@ -235,6 +235,7 @@ class ActionSaveScienceDiscipline(Action):
         return "action_save_science_discipline"
 
     def run(self, dispatcher: CollectingDispatcher, tracker, domain):
+        
         print("決策樹/科目/主題")
         text = tracker.latest_message.get('text').strip()
 
@@ -263,14 +264,17 @@ class ActionSaveScienceDiscipline(Action):
         interest_messages = [
             "太好了！你對{}感興趣。這是一個極其精彩的領域。",
             "很棒的選擇！{}是個迷人的科目，我們有很多話題可以探討。",
-            "{}是一個非常有趣的領域，讓我們看看有哪些吸引人的主題吧！"
+            "{}是一個非常有趣的領域，讓我們看看有哪些吸引人的主題吧！",
+            "你對{}感興趣真是太好了，這個領域有很多值得我們一起探索的主題。",
+            "{}是個極其精彩的科目，我們可以深入探討很多有趣的主題。"
         ]
 
         matched_discipline = None
         for discipline, topics in disciplines_topics.items():
             if re.search(discipline, text, re.IGNORECASE):
                 matched_discipline = discipline
-                topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics)])
+                topics_randomized = random.sample(topics, len(topics))  # 隨機排列主題
+                topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics_randomized)])
                 break
 
         if matched_discipline:
@@ -282,7 +286,7 @@ class ActionSaveScienceDiscipline(Action):
             return [FollowupAction("action_clear_slots"), SlotSet("science_discipline", matched_discipline)]
 
         # 如果沒有匹配到任何學科
-        dispatcher.utter_message(text="看起來我們沒有找到對應的科目。能再具體點嗎？或者換個科目試試？")
+        dispatcher.utter_message(text="看起來我們沒有找到對應的科目。能再具體點嗎？")
         return []
 
         # # 檢查用戶輸入是否匹配已知學科
@@ -315,15 +319,15 @@ class ActionExploreTopic(Action):
         if conversation_rounds == 0:
             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
             input_message = tracker.latest_message.get('text').strip()
-        else:
-            # 獲取最後三條用戶的訊息作為上下文
-            all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
-            print(f"對話內容：{all_user_messages}")
-            input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
+        # else:
+        #     # 獲取最後三條用戶的訊息作為上下文
+        #     all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
+        #     print(f"對話內容：{all_user_messages}")
+        #     input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
 
         if input_message.lower() == "不需要":
             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
-            return self.end_conversation()
+            return [FollowupAction("action_clear_slots"), self.end_conversation()]
 
         url = "http://ml.hsueh.tw:8787/generate-text/"
         data = {
@@ -344,7 +348,7 @@ class ActionExploreTopic(Action):
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
         conversation_rounds += 1
-        if conversation_rounds >= 4:
+        if conversation_rounds >= 7:
             return [FollowupAction("action_research_question"), self.end_conversation()]
 
         return [SlotSet("conversation_rounds", conversation_rounds), SlotSet("continue_conversation", True)]
@@ -459,7 +463,7 @@ class ActionResearchQuestion(Action):
 
         url = "http://ml.hsueh.tw/callapi/"
         data = {
-            "engine": "gpt-35-turbo",
+            "engine": "taide-llama-3",
             "temperature": 0.7,
             "max_tokens": 300,
             "top_p": 0.95,

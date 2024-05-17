@@ -29,7 +29,7 @@ import { sleep, check } from 'k6';
 
 export let options = {
     stages: [
-        { duration: '1m', target: 20 },  // 模擬在1分鐘內逐漸增加到20個虛擬用戶
+        { duration: '1m', target: 30 },  // 模擬在1分鐘內逐漸增加到20個虛擬用戶
         // { duration: '3m', target: 50 },  // 進一步增加到50個虛擬用戶，持續3分鐘
         // { duration: '1m', target: 0 },   // 最後1分鐘內虛擬用戶數減少到0
     ]
