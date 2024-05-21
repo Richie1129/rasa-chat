@@ -463,13 +463,13 @@ class ActionResearchQuestion(Action):
 
         url = "http://ml.hsueh.tw/callapi/"
         data = {
-            "engine": "taide-llama-3",
+            "engine": "gpt-35-turbo",
             "temperature": 0.7,
             "max_tokens": 300,
             "top_p": 0.95,
             "top_k": 5,
             "roles": [
-                {"role": "system", "content": "請根據內容，給予高中生一個值得研究的「研究問題」，給予研究問題即可，回覆不要超過100字"},
+                {"role": "system", "content": "請根據內容，給予高中生一個值得研究的「研究問題」，回覆格式「研究問題：」，你只要回覆研究問題即可，絕對不能有其他文字。請用繁體中文回覆。，回覆不要超過100字"},
                 {"role": "user", "content": input_message}
             ],
             "frequency_penalty": 0,
@@ -492,6 +492,8 @@ class ActionResearchQuestion(Action):
             dispatcher.utter_message(text=message_content)
         except requests.RequestException as error:
             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
+                
+            return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
 # 科技大觀園
 class ActionSaveSubtopic(Action):

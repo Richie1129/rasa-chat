@@ -1,21 +1,20 @@
-// ChatRoom.js
-
 import React, { useState, useContext, useEffect } from 'react';
 import { useSelector } from "react-redux";
 import { FaUser } from 'react-icons/fa';
-import { fetchElasticSearchResults } from './ElasticSearch'; // 引入查詢函數
 import { AppContext } from "../context/appContext";
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
 import './ChatRoom.css';
-import { fetchTechCsv } from '../Api/techcsv';
-import DialogBox from '../components/DialogBox'
-import { fetch5W1H } from '../Api/5W1H';
-import { fetchDefine } from '../Api/defineapi';
+import DialogBox from '../components/DialogBox';
+import Lottie from 'react-lottie';
+import LoadingAnimation from '../assets/Loading_dot.json';
+// import { fetch5W1H } from '../Api/5W1H';
+// import { fetchDefine } from '../Api/defineapi';
+// import { fetchTechCsv } from '../Api/techcsv';
 // import { sendMessage, sendButtonPayload } from './app.js';  // 確保路徑正確
 
 const ChatRoom = () => {
     const welcomeMessage = "嗨！我是一位專門輔導高中生科學探究與實作的自然科學導師。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，並引導你選擇一個有興趣的科展主題，以及更深入了解你的研究問題。今天我們來一起找出一個適合你的科學探究主題。跟我打個招呼，讓我們來探索科學的奧妙吧！";
-    
+
     const [messages, setMessages] = useState(() => {
         const savedMessages = localStorage.getItem('chatMessages');
         // 若本地沒有保存的消息，則顯示歡迎消息
@@ -27,6 +26,7 @@ const ChatRoom = () => {
         }];
     });
     const [inputMessage, setInputMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const { socket } = useContext(AppContext);
     const user = useSelector((state) => state.user);
 
@@ -64,6 +64,8 @@ const ChatRoom = () => {
 
     const handleSendMessage = async () => {
         if (inputMessage.trim() !== '') { 
+            setIsLoading(true);  // 啟動載入效果
+
             const messageData = {
                 role: 'user',
                 content: inputMessage,
@@ -72,20 +74,65 @@ const ChatRoom = () => {
                 from: user,
                 // optionText: selectedOption
             };
-    
             // 這裡的 'chat-message' 需要與後端監聽的事件名稱一致
-            socket.emit('chat-message', messageData); 
+            socket.emit('chat-message', messageData);
             // 更新 messages 狀態以包括新消息
             setMessages(messages => [...messages, { 
               text: inputMessage, 
               type: 'user', 
               time: messageData.time, 
-              date: messageData.date,
+              date: messageData.date
             //   optionText: selectedOption
             }]);
             // 清空輸入框
             setInputMessage('');
 
+            async function fetchElasticSearchResults(keyword) {
+                try {
+                    const response = await fetch('http://ml.hsueh.tw:7777/search/', {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ query: keyword })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error fetching search results:', error);
+                    return [];
+                }
+            }
+
+            if (inputMessage.includes('查詢相關作品：')) {
+                const keyword = inputMessage.split('查詢相關作品：')[1]; 
+                const searchResults = await fetchElasticSearchResults(keyword); 
+
+                if (Array.isArray(searchResults)) {
+                    searchResults.forEach(result => {
+                        const resultText = `
+                            <div>
+                                <p><strong>科目:</strong> ${result.科目}</p>
+                                <p><strong>名稱:</strong> ${result.名稱}</p>
+                                <p><strong>關鍵字:</strong> ${result.關鍵字}</p>
+                                <p><strong>摘要:</strong> ${result.摘要}</p>
+                                <p><strong>連結:</strong> <a href="${result.連結}" target="_blank">${result.連結}</a></p>
+                            </div>
+                        `;
+                        setMessages(currentMessages => [...currentMessages, { text: resultText, type: 'response', isHTML: true }]);
+                    });
+                } else {
+                    console.error('返回的數據不是陣列');
+                }
+                setIsLoading(false);  // 停止載入效果
+                return;
+            }
             // if (selectedOption === '5W1H') {
             //     const searchResult = await fetch5W1H(inputMessage);
             //     if (searchResult && !searchResult.error) {
@@ -153,6 +200,7 @@ const ChatRoom = () => {
                 //     console.log("isFirstMessage",isFirstMessage)
                 // }
                 // console.log("rasaEndpoint",rasaEndpoint);
+
                 const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook';
                 // const rasaEndpoint = 'http://140.115.126.232:5005/webhooks/rest/webhook';
 
@@ -215,14 +263,16 @@ const ChatRoom = () => {
                             time: new Date().toLocaleTimeString(),
                             date: new Date().toLocaleDateString()
                         };
-                        
-                        // 儲存對話資料到後端或數據庫
-                        socket.emit('chat-message', responseMessageData);
-                    });
-                } catch (error) {
-                    console.error('與 Rasa 通信過程中出現錯誤：', error);
-                }
-            // }
+
+                    // 儲存對話資料到後端或數據庫
+                    socket.emit('chat-message', responseMessageData);
+                });
+
+                setIsLoading(false);  // 停止載入效果
+            } catch (error) {
+                console.error('與 Rasa 通信過程中出現錯誤：', error);
+                setIsLoading(false);  // 發生錯誤也要停止載入效果
+            }
         }
     };
 
@@ -231,12 +281,21 @@ const ChatRoom = () => {
             handleSendMessage();
         }
     };
+
     const handleClearHistory = () => {
         // 清除 localStorage 中的歷史消息
         localStorage.removeItem('chatMessages');
         setMessages([]);
     };
 
+    const loadingOptions = {
+        loop: true,
+        autoplay: true, 
+        animationData: LoadingAnimation,
+        rendererSettings: {
+            preserveAspectRatio: 'none'
+        }
+    };
     // const handleOptionSelect = (option) => {
     //     console.log("選擇的選項:", option);
     //     let optionText = "";
@@ -282,22 +341,20 @@ const ChatRoom = () => {
     //     }
     //     setTempMessage(optionText); // 設置短期顯示的提示信息
     // };
-    
+
     return (
-        
         <div className="chat-room">
             <div className="left-panel">
-            
-            <div className="chatroom-intro">
-            <h1>科學探究與實作學習平台</h1>
-            <h3>聊天室介紹</h3>
-                <p>歡迎來到專為高中生設計的科學探究與實作聊天室！這裡聚焦於高中生在科學探究學習中的過程，特別關注「科學探究能力」和「自我導向學習傾向」。</p>
-                <p>在這個平台上，我們鼓勵學生通過日常生活、科學研究或課堂所學啟發，找到並深入探討他們感興趣的科學主題。</p>
-                <h5>在「科學探究與實作」中，你們將學習到什麼呢？</h5>
-                <p>1. 發現問題：學習從日常生活中觀察現象，提出問題。這是科學探究的起點，每一項偉大的科學發現都始於一個簡單的問題。</p>
-                <p>2. 探究問題：通過實驗、研究和分析來尋找問題的答案。你將學會如何設計實驗、收集數據並從中得出結論。</p>
-                <p>3. 批判思考與創新：鼓勵你們對現有知識提出質疑，並嘗試創新方法解決問題。這不僅僅是學習知識，更是培養獨立思考和創新能力。</p>
-            </div>
+                <div className="chatroom-intro">
+                    <h1>科學探究與實作學習平台</h1>
+                    <h3>聊天室介紹</h3>
+                    <p>歡迎來到專為高中生設計的科學探究與實作聊天室！這裡聚焦於高中生在科學探究學習中的過程，特別關注「科學探究能力」和「自我導向學習傾向」。</p>
+                    <p>在這個平台上，我們鼓勵學生通過日常生活、科學研究或課堂所學啟發，找到並深入探討他們感興趣的科學主題。</p>
+                    <h5>在「科學探究與實作」中，你們將學習到什麼呢？</h5>
+                    <p>1. 發現問題：學習從日常生活中觀察現象，提出問題。這是科學探究的起點，每一項偉大的科學發現都始於一個簡單的問題。</p>
+                    <p>2. 探究問題：通過實驗、研究和分析來尋找問題的答案。你將學會如何設計實驗、收集數據並從中得出結論。</p>
+                    <p>3. 批判思考與創新：鼓勵你們對現有知識提出質疑，並嘗試創新方法解決問題。這不僅僅是學習知識，更是培養獨立思考和創新能力。</p>
+                </div>
                 {/* <div className="options"> */}
                     {/* <button onClick={() => handleOptionSelect("option1")}>探究主題</button> */}
                     {/* <button onClick={() => handleOptionSelect("option2")}>科學名詞QA</button> */}
@@ -308,8 +365,6 @@ const ChatRoom = () => {
                 </div>
             </div>
             <div className="right-panel">
-                {/* <div className="selected-option">{selectedOption}</div>
-                {tempMessage && <div className="temp-message">{tempMessage}</div>} */}
                 <div className="messages">
                     {messages.map((message, index) => (
                         <div key={index} className={`message ${message.type === 'user' ? 'user-message' : 'response-message'}`}>
@@ -329,6 +384,11 @@ const ChatRoom = () => {
                             </div>
                         </div>
                     ))}
+                    {isLoading && (
+                        <div className="message response-message loading-container">
+                            <Lottie options={loadingOptions} height={30} width={40} />
+                        </div>
+                    )}
                 </div>
                 <div className="message-input">
                     <FaUser className="user-icon" />

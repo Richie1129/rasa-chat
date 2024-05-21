@@ -1,0 +1,18 @@
+version: '3'
+services:
+  backend:
+    build:
+      context: ./chat-backend-main
+      dockerfile: dockerfile
+    ports:
+      - 5001:5001
+    networks:
+      - agent_network
+  front:
+    build:
+      context: ./chat-frontend-master
+      dockerfile: dockerfile
+    ports:
+      - 3000:3000
+    networks:
+      - agent_network

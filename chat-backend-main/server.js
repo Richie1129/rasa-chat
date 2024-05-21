@@ -13,8 +13,11 @@ const bodyParser = require('body-parser');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cors());
-app.options('*', cors());  // 啟用所有選項請求
+app.use(cors({origin:'*'}));
+// 使用自定義 CORS 設置
+app.use(cors(corsOptions));
+// 啟用對所有選項請求的 CORS
+app.options('*', cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }));
 
 app.use('/users', userRoutes);
