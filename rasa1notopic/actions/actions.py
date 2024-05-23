@@ -270,7 +270,7 @@ class ActionSaveScienceDiscipline(Action):
         for discipline, topics in disciplines_topics.items():
             if re.search(discipline, text, re.IGNORECASE):
                 matched_discipline = discipline
-                topics_randomized = random.sample(topics, len(topics))  # 隨機排列主題
+                topics_randomized = random.sample(topics, min(len(topics),6))  # 隨機排列主題
                 topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics_randomized)])
                 break
 
@@ -315,12 +315,12 @@ class ActionExploreTopic(Action):
 
         if conversation_rounds == 0:
             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
-            input_message = tracker.latest_message.get('text').strip()
-        # else:
-        #     # 獲取最後三條用戶的訊息作為上下文
-        #     all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
-        #     print(f"對話內容：{all_user_messages}")
-        #     input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
+            # input_message = tracker.latest_message.get('text').strip()
+        else:
+            # 獲取最後三條用戶的訊息作為上下文
+            all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == ['user','bot']]
+            print(f"對話內容：{all_user_messages}")
+            input_message = ' '.join(all_user_messages[-2:])  # 取最後三條訊息並將它們合併為一個字符串
 
         if input_message.lower() == "不需要":
             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
@@ -345,7 +345,8 @@ class ActionExploreTopic(Action):
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
         conversation_rounds += 1
-        if conversation_rounds >= 4:
+
+        if conversation_rounds >= 5:
             return [FollowupAction("action_research_question"), self.end_conversation()]
 
         return [SlotSet("conversation_rounds", conversation_rounds), SlotSet("continue_conversation", True)]
@@ -457,10 +458,19 @@ class ActionResearchQuestion(Action):
         last_ten_messages = self.get_last_ten_messages(tracker)
         input_message = " ".join(last_ten_messages)
         print(input_message)
+        
+        # url = "http://ml.hsueh.tw:8787/generate-text/"
+        # data = {
+        #     "prompt": input_message
+        # }
+        # headers = {
+        #     'accept': 'application/json', 
+        #     'Content-Type': 'application/json'
+        #     }
 
         url = "http://ml.hsueh.tw/callapi/"
         data = {
-            "engine": "taide-llama-3",
+            "engine": "gpt-35-turbo",
             "temperature": 0.7,
             "max_tokens": 500,
             "top_p": 0.95,
@@ -480,7 +490,18 @@ class ActionResearchQuestion(Action):
             'Accept': 'application/json',
             'Content-Type': 'application/json'
         }
-
+    #     try:
+    #         response = requests.post(url, json=data, headers=headers)
+    #         response_data = response.json()
+    #         dispatcher.utter_message("我們已經討論的很多了唷，推薦一個研究問題給你")
+    #         dispatcher.utter_message(text=response_data['response'])
+    #     except requests.RequestException:
+    #         dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
+    #         return self.end_conversation()
+            
+    # def end_conversation(self):
+    #     return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
+        
         try:
             response = requests.post(url, json=data, headers=headers)
             response.raise_for_status()
@@ -489,6 +510,12 @@ class ActionResearchQuestion(Action):
             dispatcher.utter_message(text=message_content)
         except requests.RequestException as error:
             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
+            return self.end_conversation()
+            
+    def end_conversation(self):
+        return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
+        
+        
 
 # 科技大觀園
 class ActionSaveSubtopic(Action):

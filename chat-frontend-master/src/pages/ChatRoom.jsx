@@ -3,14 +3,14 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useSelector } from "react-redux";
 import { FaUser } from 'react-icons/fa';
-import { fetchElasticSearchResults } from './ElasticSearch'; // 引入查詢函數
+// import { fetchElasticSearchResults } from './ElasticSearch'; // 引入查詢函數
 import { AppContext } from "../context/appContext";
 import Swal from 'sweetalert2'
 import './ChatRoom.css';
-import { fetchTechCsv } from '../Api/techcsv';
+// import { fetchTechCsv } from '../Api/techcsv';
 import DialogBox from '../components/DialogBox'
-import { fetch5W1H } from '../Api/5W1H';
-import { fetchDefine } from '../Api/defineapi';
+// import { fetch5W1H } from '../Api/5W1H';
+// import { fetchDefine } from '../Api/defineapi';
 // import { sendMessage, sendButtonPayload } from './app.js';  // 確保路徑正確
 
 const ChatRoom = () => {
@@ -86,6 +86,53 @@ const ChatRoom = () => {
             // 清空輸入框
             setInputMessage('');
 
+            // 定義一個函數來呼叫 Elasticsearch API
+            async function fetchElasticSearchResults(keyword) {
+                try {
+                    const response = await fetch('http://ml.hsueh.tw:7777/search/', {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ query: keyword })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error fetching search results:', error);
+                    return [];
+                }
+            }
+
+            // 修改 inputMessage 判斷邏輯來檢查並提取關鍵字，然後呼叫 API 並處理結果
+            if (inputMessage.includes('查詢相關作品：')) {
+                const keyword = inputMessage.split('查詢相關作品：')[1]; // 從輸入中提取關鍵字
+                const searchResults = await fetchElasticSearchResults(keyword); // 使用提取的關鍵字進行搜索
+
+                if (Array.isArray(searchResults)) {
+                    searchResults.forEach(result => {
+                        const resultText = `
+                            <div>
+                                <p><strong>科目:</strong> ${result.科目}</p>
+                                <p><strong>名稱:</strong> ${result.名稱}</p>
+                                <p><strong>關鍵字:</strong> ${result.關鍵字}</p>
+                                <p><strong>摘要:</strong> ${result.摘要}</p>
+                                <p><strong>連結:</strong> <a href="${result.連結}" target="_blank">${result.連結}</a></p>
+                            </div>
+                        `;
+                        setMessages(currentMessages => [...currentMessages, { text: resultText, type: 'response', isHTML: true }]);
+                    });
+                } else {
+                    console.error('返回的數據不是陣列');
+                }
+            }
+
             // if (selectedOption === '5W1H') {
             //     const searchResult = await fetch5W1H(inputMessage);
             //     if (searchResult && !searchResult.error) {
@@ -99,7 +146,8 @@ const ChatRoom = () => {
             //       setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
             //       console.error('返回的數據不符合預期');
             //     }
-            //   } else if (inputMessage.includes('我想查詢相關作品：')) {
+            //   } else 
+            // if (inputMessage.includes('我想查詢相關作品：')) {
             //     const keyword = inputMessage.split('我想查詢相關作品：')[1]; // 從輸入中提取關鍵字
             //     const searchResults = await fetchElasticSearchResults(keyword); // 使用提取的關鍵字進行搜索
             
@@ -109,6 +157,7 @@ const ChatRoom = () => {
             //         });
             //     } else {
             //         console.error('返回的數據不是陣列');
+            //     }
             //     }           
             // } else if (selectedOption === '科學名詞QA') {
             //     const searchResult = await fetchDefine(inputMessage);
@@ -153,9 +202,9 @@ const ChatRoom = () => {
                 //     console.log("isFirstMessage",isFirstMessage)
                 // }
                 // console.log("rasaEndpoint",rasaEndpoint);
-                const rasaEndpoint = 'http://140.115.126.232:5005/webhooks/rest/webhook'; // 使用代理路径
-                // const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook'; // 使用代理路径
-                
+                const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook';
+                // const rasaEndpoint = 'http://140.115.126.232:5005/webhooks/rest/webhook';
+
                 try {
                     const response = await fetch(rasaEndpoint, {
                         method: 'POST',

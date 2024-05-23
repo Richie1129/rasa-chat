@@ -13,10 +13,7 @@ const bodyParser = require('body-parser');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://140.115.126.232:3000'],
-  methods: ['GET', 'POST'],
-}));
+app.use(cors({origin:'*'}));
 app.options('*', cors());  // 啟用所有選項請求
 app.use(bodyParser.urlencoded({ extended: false, limit: '10mb' }));
 
@@ -32,7 +29,7 @@ const io = require('socket.io')(server, {
   cors: {
     // origin: ['http://localhost:3000', 'http://140.115.126.232:3000'],
     origin: '*',
-    methods: ['GET', 'POST'],
+    methods: '*',
   },
 });
 
