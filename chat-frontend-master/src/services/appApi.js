@@ -36,16 +36,6 @@ const appApi = createApi({
                 body: payload,
             }),
         }),
-
-        // Wordcloud
-
-        // wordCloud: builder.mutation({
-        //     query: (payload) => ({
-        //         url: "/admin/wordCloud",
-        //         method: "GET",
-        //         body: payload,
-        //     }),
-        // }),
     }),
 });
 

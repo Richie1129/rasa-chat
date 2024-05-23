@@ -20,6 +20,7 @@ from rasa_sdk.events import FollowupAction
 import requests
 import re
 import random
+import json
 
 # 最後3則訊息
 def get_last_three_messages(tracker: Tracker):
@@ -273,7 +274,7 @@ class ActionSaveScienceDiscipline(Action):
         for discipline, topics in disciplines_topics.items():
             if re.search(discipline, text, re.IGNORECASE):
                 matched_discipline = discipline
-                topics_randomized = random.sample(topics, len(topics))  # 隨機排列主題
+                topics_randomized = random.sample(topics, min(len(topics),6))  # 隨機排列主題
                 topics_formatted = '\n'.join([f"{i + 1}. {topic}" for i, topic in enumerate(topics_randomized)])
                 break
 
@@ -316,27 +317,19 @@ class ActionExploreTopic(Action):
         if not continue_conversation:
             return []
 
+        if conversation_rounds >= 5:
+            return [FollowupAction("action_research_question"), self.end_conversation()]
+
         if conversation_rounds == 0:
             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
-            input_message = tracker.latest_message.get('text').strip()
-        # else:
-        #     # 獲取最後三條用戶的訊息作為上下文
-        #     all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
-        #     print(f"對話內容：{all_user_messages}")
-        #     input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
 
         if input_message.lower() == "不需要":
             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
             return [FollowupAction("action_clear_slots"), self.end_conversation()]
 
         url = "http://ml.hsueh.tw:8787/generate-text/"
-        data = {
-            "prompt": input_message
-        }
-        headers = {
-            'accept': 'application/json', 
-            'Content-Type': 'application/json'
-            }
+        data = {"prompt": input_message}
+        headers = {'accept': 'application/json', 'Content-Type': 'application/json'}
 
         try:
             response = requests.post(url, json=data, headers=headers)
@@ -348,98 +341,12 @@ class ActionExploreTopic(Action):
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
         conversation_rounds += 1
-        if conversation_rounds >= 7:
-            return [FollowupAction("action_research_question"), self.end_conversation()]
-
         return [SlotSet("conversation_rounds", conversation_rounds), SlotSet("continue_conversation", True)]
         
     def end_conversation(self):
         return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
-    
-# # 定題
-# class ActionExploreTopic(Action):
-#     def name(self):
-#         return "action_explore_topic"
-    
-#     def run(self, dispatcher: CollectingDispatcher, tracker, domain):
-#         print("定題小幫手")
-#         input_message = tracker.latest_message.get('text').strip()
-#         conversation_rounds = tracker.get_slot('conversation_rounds') or 0
-#         continue_conversation = tracker.get_slot('continue_conversation') or True
 
-#         if not continue_conversation:
-#             return []
 
-#         if conversation_rounds == 0:
-#             dispatcher.utter_message(text="哈囉，我是你的定題小幫手！")
-#             input_message = tracker.latest_message.get('text').strip()
-#         else:
-#             # 獲取最後三條用戶的訊息作為上下文
-#             all_user_messages = [event.get('text') for event in tracker.events if event.get('event') == 'user']
-#             print(f"對話內容：{all_user_messages}")
-#             input_message = ' '.join(all_user_messages[-3:])  # 取最後三條訊息並將它們合併為一個字符串
-
-#         if input_message.lower() == "不需要":
-#             dispatcher.utter_message(text="好的，如果需要其他幫助請隨時告訴我！")
-#             return self.end_conversation()
-
-#         url = "http://ml.hsueh.tw/callapi/"
-#         data = {
-#             "engine": "gpt-35-turbo",
-#             "temperature": 0.7,
-#             "max_tokens": 300,
-#             "top_p": 0.95,
-#             "top_k": 5,
-#             "roles": [{"role": "system", "content": 
-#                 "1.你的關鍵任務是透過「提問」和討論，利用以下自然科學主題幫助學生找到感興趣的研究主題，包括「什麼」、「如何」和「為什麼」的問題。不斷利用問題來引導學生探索並深化他們對自然科學的興趣和理解。"
-#                 "2.知識範圍限制： 你專注於自然科學相關的知識。在每次與使用者互動前，你將評估問題是否與「自然科學」相關。對於非自然科學相關的問題，你將友善地回應「這個問題超出了我的專業範圍，但我們可以討論其他與自然科學相關的主題。」"
-#                 "3.自然科學範圍： 你的討論和回答將涵蓋以下主題："
-#                 "物理：能量的形式與轉換、溫度與熱量、力與運動、宇宙與天體、萬有引力、波動、光及聲音、電磁現象、量子現象、物理在生活中的應用。"
-#                 "化學：能量的形式與轉換、物質的分離與鑑定、物質的結構與功能、組成地球的物質、水溶液中的變化、氧化與還原反應、酸鹼反應、科學在生活中的應用。"
-#                 "生物：生殖與遺傳、演化、生物多樣性、基因改造。"
-#                 "地科：天氣與氣候變化、晝夜與季節、天然災害與防治、永續發展與資源的利用、氣候變遷之影響與調適。"      
-#                 "回覆不要超過100字"},
-#                 {"role": "user", "content": input_message}],
-#             "frequency_penalty": 0,
-#             "repetition_penalty": 1.03,
-#             "presence_penalty": 0,
-#             "stop": "",
-#             "past_messages": 10,
-#             "purpose": "dev"
-#         }
-#         headers = {
-#             'Accept': 'application/json',
-#             'Content-Type': 'application/json'
-#         }
-
-#         try:
-#             response = requests.post(url, json=data, headers=headers)
-#             print(f"對話輪數：{conversation_rounds}")
-#             response.raise_for_status()
-#             message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
-#             # dispatcher.utter_message(text=message_content)
-#         except requests.RequestException as error:
-#             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
-#             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
-
-#         # API請求成功之後，才增加對話回合數
-#         conversation_rounds += 1
-
-#         if conversation_rounds >= 4:
-#             # dispatcher.utter_message(text="看來我們已經討論了很多！如果你有其他問題，隨時可以問我。")
-#             return [FollowupAction("action_research_question"), self.end_conversation()]
-        
-#         dispatcher.utter_message(text=message_content)
-
-#         # 如果未達到8回合，繼續對話
-#         return [SlotSet("conversation_rounds", conversation_rounds),
-#                 SlotSet("continue_conversation", True)]
-        
-#     # 結束對話
-#     def end_conversation(self):
-#         print("結束對話")
-#         return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
-    
 # 給研究問題   
 class ActionResearchQuestion(Action):
     def name(self) -> Text:
@@ -455,45 +362,106 @@ class ActionResearchQuestion(Action):
         last_ten_messages.reverse()
         return last_ten_messages
 
+    def call_tech(self, text: str):
+        url = 'http://ml.hsueh.tw:1129/search/'
+        headers = {
+            'accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+        payload = {
+            'query': text
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        
+        if response.status_code == 200:
+            results = response.json()
+            return results
+        else:
+            return None
+
     def run(self, dispatcher: CollectingDispatcher, tracker: Tracker, domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
         print("研究問題")
         last_ten_messages = self.get_last_ten_messages(tracker)
         input_message = " ".join(last_ten_messages)
         print(input_message)
-
-        url = "http://ml.hsueh.tw/callapi/"
+        
+        url = "http://ml.hsueh.tw:7878/generate-Research_Question/"
         data = {
-            "engine": "gpt-35-turbo",
-            "temperature": 0.7,
-            "max_tokens": 300,
-            "top_p": 0.95,
-            "top_k": 5,
-            "roles": [
-                {"role": "system", "content": "請根據內容，給予高中生一個值得研究的「研究問題」，回覆格式「研究問題：」，你只要回覆研究問題即可，絕對不能有其他文字。請用繁體中文回覆。，回覆不要超過100字"},
-                {"role": "user", "content": input_message}
-            ],
-            "frequency_penalty": 0,
-            "repetition_penalty": 1.03,
-            "presence_penalty": 0,
-            "stop": "",
-            "past_messages": 10,
-            "purpose": "dev"
+            "prompt": input_message
         }
         headers = {
-            'Accept': 'application/json',
+            'accept': 'application/json', 
             'Content-Type': 'application/json'
-        }
+            }
 
         try:
             response = requests.post(url, json=data, headers=headers)
-            response.raise_for_status()
-            message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
+            response_data = response.json()
+            research_question = response_data['response']
+            print(response_data['response'])
             dispatcher.utter_message("我們已經討論的很多了唷，推薦一個研究問題給你")
-            dispatcher.utter_message(text=message_content)
-        except requests.RequestException as error:
+            dispatcher.utter_message(text=research_question)
+            dispatcher.utter_message(text="給你一些參考的文章，你可以先看看這些文章，再和老師討論你的想法喔！")
+            
+            # 使用 research_question 作為傳入值呼叫 call_tech 函數
+            tech_results = self.call_tech(text=research_question)
+            if tech_results:
+                # 儲存標題、摘要、連結的陣列
+                results_array = []
+                for result in tech_results:
+                    result_info = {
+                        '標題': result['標題'],
+                        '摘要': result['摘要'],
+                        '連結': result['連結']
+                    }
+                    results_array.append(result_info)
+
+                # 回傳結果
+                dispatcher.utter_message(text=str(results_array))
+            else:
+                dispatcher.utter_message(text="未找到相關技術文章。")
+
+        
+        except requests.RequestException:
             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
-                
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
+
+        return []
+
+        # url = "http://ml.hsueh.tw/callapi/"
+        # data = {
+        #     "engine": "gpt-35-turbo",
+        #     "temperature": 0.7,
+        #     "max_tokens": 300,
+        #     "top_p": 0.95,
+        #     "top_k": 5,
+        #     "roles": [
+        #         {"role": "system", "content": "請根據內容，給予高中生一個值得研究的「研究問題」，回覆格式「研究問題：」，你只要回覆研究問題即可，絕對不能有其他文字。請用繁體中文回覆。，回覆不要超過100字"},
+        #         {"role": "user", "content": input_message}
+        #     ],
+        #     "frequency_penalty": 0,
+        #     "repetition_penalty": 1.03,
+        #     "presence_penalty": 0,
+        #     "stop": "",
+        #     "past_messages": 10,
+        #     "purpose": "dev"
+        # }
+        # headers = {
+        #     'Accept': 'application/json',
+        #     'Content-Type': 'application/json'
+        # }
+
+        # try:
+        #     response = requests.post(url, json=data, headers=headers)
+        #     response.raise_for_status()
+        #     message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '')
+        #     dispatcher.utter_message("我們已經討論的很多了唷，推薦一個研究問題給你")
+        #     dispatcher.utter_message(text=message_content)
+        #     return [FollowupAction("action_save_subtopic")]
+        # except requests.RequestException as error:
+        #     dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
+                
+        #     return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
 
 # 科技大觀園
 class ActionSaveSubtopic(Action):
@@ -504,10 +472,9 @@ class ActionSaveSubtopic(Action):
         text = tracker.latest_message.get('text')
         print("科技大觀園")
         # API URL
-        api_url = "http://ml.hsueh.tw:1287/query/"
+        api_url = "http://ml.hsueh.tw:1129/search/"
         data = {
-            "question": text,
-            "search_result": ""
+            "query": text
         }
         headers = {
             'accept': 'application/json',
@@ -518,31 +485,69 @@ class ActionSaveSubtopic(Action):
         response = requests.post(api_url, json=data, headers=headers)
         if response.status_code == 200:
             result = response.json()
-            if result.get("response") and result["response"] not in ['API請求失敗', 'API請求過程中發生錯誤']:
-                # dispatcher.utter_message(text=result["response"])
+            search_results = result.get("search_results", [])
+            if search_results:
                 dispatcher.utter_message(text="以下來自科技大觀園的相關資訊...")
 
-                search_contents = []
-                for content_str in result.get("search_contents", []):
-                    if 'Link: ' in content_str and 'Description: ' in content_str:
-                        parts = content_str.split(' Link: ')
-                        title = parts[0].replace('Title: ', '')
-                        link, description = parts[1].split(' Description: ')
-                        content_dict = {
-                            "title": title,
-                            "link": link,
-                            "description": description
-                        }
-                        search_contents.append(content_dict)
-
-                for content in search_contents:
-                    message = f"{content['title']}\n{content['description']}\n{content['link']}"
+                for item in search_results:
+                    message = f"標題: {item['Title']}\n摘要: {item['Description']}\n連結: {item['Link']}"
                     dispatcher.utter_message(text=message)
+            else:
+                dispatcher.utter_message(text="未找到相關資訊")
         else:
             dispatcher.utter_message(text="API請求失敗或發生錯誤")
             print('API請求失敗或發生錯誤')
 
         return []
+
+
+# class ActionSaveSubtopic(Action):
+#     def name(self):
+#         return "action_save_subtopic"
+
+#     def run(self, dispatcher, tracker, domain):
+#         text = tracker.latest_message.get('text')
+#         print("科技大觀園")
+#         # API URL
+#         api_url = "http://ml.hsueh.tw:1287/query/"
+#         data = {
+#             "question": text,
+#             "search_result": ""
+#         }
+#         headers = {
+#             'accept': 'application/json',
+#             'Content-Type': 'application/json'
+#         }
+
+#         # 發送 POST 請求到 API
+#         response = requests.post(api_url, json=data, headers=headers)
+#         if response.status_code == 200:
+#             result = response.json()
+#             if result.get("response") and result["response"] not in ['API請求失敗', 'API請求過程中發生錯誤']:
+#                 # dispatcher.utter_message(text=result["response"])
+#                 dispatcher.utter_message(text="以下來自科技大觀園的相關資訊...")
+
+#                 search_contents = []
+#                 for content_str in result.get("search_contents", []):
+#                     if 'Link: ' in content_str and 'Description: ' in content_str:
+#                         parts = content_str.split(' Link: ')
+#                         title = parts[0].replace('Title: ', '')
+#                         link, description = parts[1].split(' Description: ')
+#                         content_dict = {
+#                             "title": title,
+#                             "link": link,
+#                             "description": description
+#                         }
+#                         search_contents.append(content_dict)
+
+#                 for content in search_contents:
+#                     message = f"{content['title']}\n{content['description']}\n{content['link']}"
+#                     dispatcher.utter_message(text=message)
+#         else:
+#             dispatcher.utter_message(text="API請求失敗或發生錯誤")
+#             print('API請求失敗或發生錯誤')
+
+#         return []
   
 # 檢查 slots 狀態
 class ActionCheckSlots(Action):

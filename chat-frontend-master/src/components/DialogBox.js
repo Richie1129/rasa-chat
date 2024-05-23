@@ -6,12 +6,13 @@ function DialogBox({ onScaffoldClick }) {
   const scaffoldOptions = [
     // '我想研究...',
     '什麼是...?',
+    '我覺得是因為',
     // '我對...感到好奇',
     '我想要了解',
     '我想要了解為什麼...?',
     // '我還沒有研究主題',
     // '我的研究問題是：... ?',
-    '查詢相關作品：請輸入關鍵字',
+    '查詢相關作品：請輸入關鍵字或是研究問題',
   ];
 
   const [showOptions, setShowOptions] = useState(false); // 控制鷹架選項和問候語的顯示狀態
