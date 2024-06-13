@@ -1,7 +1,7 @@
 /* ChatRoom.css */
 .chat-room {
     display: flex;
-    height: 100vh;
+    height: 91vh;
     background-image: url('../assets/botbg.jpg'); /* 設置背景圖片 */
     background-size: contain; /* 覆蓋整個聊天室區域 */
 }
@@ -183,4 +183,18 @@ body {
 @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
+}
+
+/* 中型裝置（平板電腦） */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .chat-room {
+        height: 85vh;
+    }
+}
+
+/* 小型裝置（手機） */
+@media (max-width: 767px) {
+    .chat-room {
+        height: 100vh;
+    }
 }

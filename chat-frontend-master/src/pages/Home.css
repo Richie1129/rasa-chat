@@ -1,13 +1,58 @@
+/* Home.css */
+
 .home__bg {
-    background-image: url(https://images.unsplash.com/photo-1529156069898-49953e39b3ac?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1932&q=80);
-    height: 92vh;
+    height: 91vh;
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
     overflow-x: hidden;
 }
 
+.home__content {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.home__title {
+    font-size: 2.5rem;
+    color: #343a40;
+    font-weight: bold;
+}
+
+.home__description {
+    font-size: 1.2rem;
+    color: #3c4247;
+}
+
+.home__type-animation {
+    font-size: 1.5rem;
+    color: #28a745;
+}
+
+.home__chat-button {
+    margin-top: 20px;
+    font-size: 1.2rem;
+}
+
 .home-message-icon {
     margin-left: 10px;
     display: inline-block;
+}
+
+/* .embed-responsive-16by9 {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    max-width: 100%;
+    border-radius: 10px;
+} */
+
+.lottie-container {
+    position: relative;
+    top: -100px; /* Adjust this value to move the animation up or down */
+    left: 0;
+    width: 80%;
+    height: 80%;
 }

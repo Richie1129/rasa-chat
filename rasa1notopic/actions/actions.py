@@ -21,6 +21,7 @@ import requests
 import re
 import random
 import json
+import time
 
 # 最後3則訊息
 def get_last_three_messages(tracker: Tracker):
@@ -224,10 +225,18 @@ class ActionStartDecisionTree(Action):
 
     def run(self, dispatcher, tracker, domain):
         print("決策樹/科目")
+        # dispatcher.utter_message(
+        #     text="你好呀，首先，讓我們來確定一個研究主題，你對以下哪一個科目感興趣？\n"
+        #     "請輸入：物理、化學、地科或生物。"
+        #     )
         dispatcher.utter_message(
-            text="你好呀，首先，讓我們來確定一個研究主題，你對以下哪一個科目感興趣？\n"
-            "請輸入：物理、化學、地科或生物。"
+            text="你好呀\n"
+            "首先，讓我們來確定一個看看你對哪些科目跟主題有興趣吧！\n"
             )
+        time.sleep(5)  # 等待2秒
+        dispatcher.utter_message(
+            json_message={"action": "redirect", "url": "http://localhost:3000/quiz"}
+        )
         return []
 
 # 科目
@@ -313,6 +322,9 @@ class ActionExploreTopic(Action):
         input_message = tracker.latest_message.get('text').strip()
         conversation_rounds = tracker.get_slot('conversation_rounds') or 0
         continue_conversation = tracker.get_slot('continue_conversation') or True
+        
+        if conversation_rounds != 0:
+            dispatcher.utter_message(text="很好的回答喔！")
 
         if not continue_conversation:
             return []
@@ -328,7 +340,7 @@ class ActionExploreTopic(Action):
             return [FollowupAction("action_clear_slots"), self.end_conversation()]
 
         url = "http://ml.hsueh.tw:8787/generate-text/"
-        data = {"prompt": input_message}
+        data = {"query": input_message}
         headers = {'accept': 'application/json', 'Content-Type': 'application/json'}
 
         try:
@@ -336,6 +348,7 @@ class ActionExploreTopic(Action):
             print(f"對話輪數：{conversation_rounds}")
             response_data = response.json()
             dispatcher.utter_message(text=response_data['response'])
+            print("API回傳的資料:", response_data)  # 增加打印回傳的資料，以便於調試
         except requests.RequestException:
             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]
@@ -406,22 +419,11 @@ class ActionResearchQuestion(Action):
             # 使用 research_question 作為傳入值呼叫 call_tech 函數
             tech_results = self.call_tech(text=research_question)
             if tech_results:
-                # 儲存標題、摘要、連結的陣列
-                results_array = []
                 for result in tech_results:
-                    result_info = {
-                        '標題': result['標題'],
-                        '摘要': result['摘要'],
-                        '連結': result['連結']
-                    }
-                    results_array.append(result_info)
-
-                # 回傳結果
-                dispatcher.utter_message(text=str(results_array))
+                    dispatcher.utter_message(text=f"標題: {result['標題']}\n\n摘要: {result['摘要']}\n\n連結: {result['連結']}")
             else:
                 dispatcher.utter_message(text="未找到相關技術文章。")
 
-        
         except requests.RequestException:
             dispatcher.utter_message(text="API請求過程中發生錯誤，請稍後再試。")
             return [SlotSet("continue_conversation", False), SlotSet("conversation_rounds", 0)]

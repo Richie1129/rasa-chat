@@ -8,6 +8,7 @@ import { useSelector } from "react-redux";
 import { AppContext, socket } from "./context/appContext";
 import ChatRoom from "./pages/ChatRoom";
 import Swal from 'sweetalert2';
+import Quiz from './pages/Quiz';
 
 function App() {
     // const [rooms, setRooms] = useState([]);
@@ -104,6 +105,7 @@ function App() {
                 <Navigation />
                 <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/quiz" element={<Quiz />} />
                     {!user && (
                         <>
                             <Route path="/login" element={<Login />} />

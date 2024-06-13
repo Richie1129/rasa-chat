@@ -12,6 +12,7 @@
 // const Chathistory = mongoose.model('Chathistory', ChathistorySchema);
 
 // module.exports = Chathistory;
+
 const mongoose = require('mongoose');
 
 const chathistorySchema = new mongoose.Schema({
@@ -36,3 +37,26 @@ const chathistorySchema = new mongoose.Schema({
 const Chathistory = mongoose.model('Chathistory', chathistorySchema);
 
 module.exports = Chathistory;
+
+// MongoDB Schema (使用 Mongoose)
+// const mongoose = require('mongoose');
+// const chathistorySchema = new mongoose.Schema({
+//   content: String,
+//   time: String,
+//   date: String,
+//   role: {
+//     type: String,
+//     enum: ['user', 'assistant'],
+//     required: true
+//   },
+//   from: {
+//     _id: mongoose.Schema.Types.ObjectId,
+//     name: String,
+//     email: String,
+//     status: String
+//   },
+//   socketid: String
+// });
+
+// const Chathistory = mongoose.model('Chathistory', chathistorySchema);
+// module.exports = Chathistory;

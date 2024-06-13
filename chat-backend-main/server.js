@@ -7,9 +7,15 @@ const User = require('./models/User');
 // const Message = require('./models/Message');
 // const Topic = require('./models/Topic'); // 引入 Topic 模型
 const Chathistory = require('./models/Chathistory');
-const Response = require('./models/Response');
+// const Response = require('./models/Response');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+
+// 定義 CORS 選項
+const corsOptions = {
+  origin: '*', // 允許所有來源
+  optionsSuccessStatus: 200 // 某些舊版瀏覽器(IE11, 各種SmartTVs)無法處理 204 狀態
+};
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -71,23 +77,6 @@ io.on('connection', (socket) => {
     io.emit('new-user', members);
   });
 
-  // socket.on('join-room', async (newRoom, previousRoom) => {
-  //   socket.join(newRoom);
-  //   socket.leave(previousRoom);
-  //   let roomMessages = await getLastMessagesFromRoom(newRoom);
-  //   roomMessages = sortRoomMessagesByDate(roomMessages);
-  //   socket.emit('room-messages', roomMessages);
-  // });
-
-  // socket.on('message-room', async (room, content, sender, time, date) => {
-  //   const newMessage = await Message.create({ content, from: sender, time, date, to: room });
-  //   let roomMessages = await getLastMessagesFromRoom(room);
-  //   roomMessages = sortRoomMessagesByDate(roomMessages);
-  //   // sending message to room
-  //   io.to(room).emit('room-messages', roomMessages);
-  //   socket.broadcast.emit('notifications', room);
-  // });
-
   socket.on('chat-message', async (messageData, user) => {
     try {
       // 直接使用 messageData 中的 user 資料，而不是作為單獨的參數傳遞
@@ -120,26 +109,25 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('chat-message', async (messageData) => {
-    try {
-        // 創建一個新的 Response 實例並儲存到數據庫
-        const newResponse = new Response({
-            role: messageData.role,
-            content: messageData.content,
-            time: messageData.time,
-            date: messageData.date,
-            from: messageData.from,
-            optionText: messageData.optionText
-        });
+  // socket.on('chat-message', async (messageData) => {
+  //   try {
+  //       // 創建一個新的 Response 實例並儲存到數據庫
+  //       const newResponse = new Response({
+  //           role: messageData.role,
+  //           content: messageData.content,
+  //           time: messageData.time,
+  //           date: messageData.date,
+  //           from: messageData.from,
+  //       });
 
-        await newResponse.save();
-        console.log('Message saved:', newResponse);
+  //       await newResponse.save();
+  //       console.log('Message saved:', newResponse);
 
-        io.emit('chat-message', newResponse)
-      } catch (error) {
-          console.error('Error saving message:', error);
-      }
-  });
+  //       io.emit('chat-message', newResponse)
+  //     } catch (error) {
+  //         console.error('Error saving message:', error);
+  //     }
+  // });
 
   app.delete('/logout', async (req, res) => {
     try {

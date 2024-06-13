@@ -1,0 +1,158 @@
+.quiz-container {
+  text-align: center;
+  margin: 50px;
+  animation: fadeIn 1s;
+}
+
+.quiz-question-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  animation: slideIn 0.5s;
+}
+
+.quiz-question {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.quiz-options {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.option-button {
+  margin: 0 10px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+  border-radius: 8px;
+}
+
+.option-button:hover {
+  transform: scale(1.1);
+  background-color: #0056b3;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.option-button.selected {
+  background-color: #0056b3;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.submit-button,
+.show-selection-button,
+.chat-button,
+.expand-button,
+.back-button {
+  margin: 20px 10px;
+  padding: 12px 24px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s, box-shadow 0.3s;
+  border-radius: 8px;
+}
+
+.submit-button:hover,
+.show-selection-button:hover,
+.chat-button:hover,
+.expand-button:hover,
+.back-button:hover {
+  transform: scale(1.1);
+  background-color: #218838;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.quiz-progress {
+  margin-top: 20px;
+}
+
+.progress-bar {
+  width: 150px; /* 將進度條寬度調整得更窄 */
+  height: 12px; /* 將進度條調細 */
+  background-color: #f3f3f3;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px auto; /* 使進度條居中 */
+}
+
+.progress {
+  height: 10px;
+  background-color: #007bff;
+  transition: width 0.3s;
+}
+
+button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 10px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 500ms;
+}
+
+.fade-exit {
+  opacity: 1;
+}
+
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 500ms;
+}
+
+.slide-enter {
+  transform: translateX(-100%);
+}
+
+.slide-enter-active {
+  transform: translateX(0);
+  transition: transform 500ms;
+}
+
+.slide-exit {
+  transform: translateX(0);
+}
+
+.slide-exit-active {
+  transform: translateX(-100%);
+  transition: transform 500ms;
+}

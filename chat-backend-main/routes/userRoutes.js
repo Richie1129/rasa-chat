@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const User = require('../models/User');
+const Chathistory = require('../models/Chathistory'); // 引入数据模型
 
 // creating user
 router.post('/', async (req, res) => {

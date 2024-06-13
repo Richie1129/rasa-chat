@@ -45,9 +45,9 @@ function Navigation() {
                         <LinkContainer to="/chat">
                             <Nav.Link className="navbar-link ">聊天室</Nav.Link>
                         </LinkContainer>
-                        {/* <LinkContainer to="/visgraph">
-                            <Nav.Link className="navbar-link ">想法牆</Nav.Link>
-                        </LinkContainer> */}
+                        <LinkContainer to="/quiz">
+                            <Nav.Link className="navbar-link ">主題選擇</Nav.Link>
+                        </LinkContainer>
                         {/* <LinkContainer to="/Process">
                             <Nav.Link className="navbar-link">Process</Nav.Link>
                         </LinkContainer> */}

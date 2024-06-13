@@ -7,21 +7,17 @@ import './ChatRoom.css';
 import DialogBox from '../components/DialogBox';
 import Lottie from 'react-lottie';
 import LoadingAnimation from '../assets/Loading_dot.json';
-// import { fetch5W1H } from '../Api/5W1H';
-// import { fetchDefine } from '../Api/defineapi';
-// import { fetchTechCsv } from '../Api/techcsv';
-// import { sendMessage, sendButtonPayload } from './app.js';  // 確保路徑正確
+// import { useNavigate } from 'react-router-dom';
 
 const ChatRoom = () => {
-    const welcomeMessage = "嗨！我是一位專門輔導高中生科學探究與實作的自然科學導師。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，並引導你選擇一個有興趣的科展主題，以及更深入了解你的研究問題。今天我們來一起找出一個適合你的科學探究主題。跟我打個招呼，讓我們來探索科學的奧妙吧！";
-
+    // const welcomeMessage = "嗨！我是你的科學探究小幫手。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，讓我們來探索科學的奧妙吧！";
+    const welcomeMessage = "";
     const [messages, setMessages] = useState(() => {
         const savedMessages = localStorage.getItem('chatMessages');
-        // 若本地沒有保存的消息，則顯示歡迎消息
         return savedMessages ? JSON.parse(savedMessages) : [{
-            text: welcomeMessage, 
-            type: 'response', 
-            time: new Date().toLocaleTimeString(), 
+            text: welcomeMessage,
+            type: 'response',
+            time: new Date().toLocaleTimeString(),
             date: new Date().toLocaleDateString()
         }];
     });
@@ -29,28 +25,20 @@ const ChatRoom = () => {
     const [isLoading, setIsLoading] = useState(false);
     const { socket } = useContext(AppContext);
     const user = useSelector((state) => state.user);
-
-    // // 判斷是否有研究主題的 API
-    // let isFirstMessage = true;
-    // let rasaEndpoint = '';
-
-    // const determineTopic = async (inputMessage) => {
-    //     const response = await fetch('http://ml.hsueh.tw:1229/predict/', {
-    //         method: 'POST',
-    //         headers: { 'Content-Type': 'application/json' },
-    //         body: JSON.stringify({ sentence: inputMessage })
-    //     });
-    //     const data = await response.json();
-    //     return data.prediction;
-    // };
+    const [selectedOption, setSelectedOption] = useState('option1'); // 初始選項為"科學知識解答"
+    const [optionMessages, setOptionMessages] = useState({
+        option1: [],
+        option2: [],
+        option3: []
+    });
+    // const navigate = useNavigate();
 
     useEffect(() => {
         if (messages.length === 0) {
-            // 如果聊天室沒有任何消息，則添加歡迎消息
             setMessages([{
-                text: welcomeMessage, 
-                type: 'response', 
-                time: new Date().toLocaleTimeString(), 
+                text: welcomeMessage,
+                type: 'response',
+                time: new Date().toLocaleTimeString(),
                 date: new Date().toLocaleDateString()
             }]);
         }
@@ -58,38 +46,101 @@ const ChatRoom = () => {
     }, [messages]);
 
     useEffect(() => {
-        // 監聽消息變化並更新 localStorage
         localStorage.setItem('chatMessages', JSON.stringify(messages));
     }, [messages]);
 
-    const handleSendMessage = async () => {
-        if (inputMessage.trim() !== '') { 
-            setIsLoading(true);  // 啟動載入效果
+    useEffect(() => {
+        const savedOptionMessages = localStorage.getItem('optionMessages');
+        if (savedOptionMessages) {
+            setOptionMessages(JSON.parse(savedOptionMessages));
+        }
+    }, []);
 
-            const messageData = {
+    useEffect(() => {
+        localStorage.setItem('optionMessages', JSON.stringify(optionMessages));
+    }, [optionMessages]);
+
+    const handleSendMessage = async () => {
+        console.log("handleSendMessage 被調用");
+        console.log("選擇的選項:", selectedOption);
+        if (inputMessage.trim() !== '') {
+            setIsLoading(true);
+    
+            const MessageData = {
                 role: 'user',
                 content: inputMessage,
                 time: new Date().toLocaleTimeString(),
                 date: new Date().toLocaleDateString(),
                 from: user,
-                // optionText: selectedOption
+                optionText: selectedOption
             };
-            // 這裡的 'chat-message' 需要與後端監聽的事件名稱一致
-            socket.emit('chat-message', messageData);
-            // 更新 messages 狀態以包括新消息
-            setMessages(messages => [...messages, { 
-              text: inputMessage, 
-              type: 'user', 
-              time: messageData.time, 
-              date: messageData.date
-            //   optionText: selectedOption
-            }]);
-            // 清空輸入框
+            socket.emit('chat-message', MessageData);
+            const newMessage = { text: inputMessage, type: 'user', time: MessageData.time, date: MessageData.date };
+            setMessages(messages => [...messages, newMessage]);
+            setOptionMessages(prevState => {
+                const updatedState = {
+                    ...prevState,
+                    [selectedOption]: [...prevState[selectedOption], newMessage]
+                };
+                console.log(`新增到 ${selectedOption} 的訊息:`, newMessage);
+                console.log(`option1 的所有訊息:`, updatedState.option1);
+                console.log(`option2 的所有訊息:`, updatedState.option2);
+                console.log(`option3 的所有訊息:`, updatedState.option3);
+                return updatedState;
+            });
             setInputMessage('');
-
+    
+            // 檢查是否包含"請給我一個研究問題"
+            if (inputMessage.includes('請給我一個研究問題')) {
+                const url = "http://ml.hsueh.tw:7878/generate-Research_Question/";
+                const unwantedMessages = [
+                    "不好意思，我沒有理解你的意思。你能說得更具體一點嗎。",
+                    "嗨！我是你的科學探究小幫手，專門幫助高中生解答各種科學名詞和相關概念。我會用簡單易懂的方式解釋複雜的科學知識，幫助你在自然科學的學習中取得進步！",
+                    "嗨！我是你的科學探究小幫手，在這裡，我們會通過提出引導性問題來幫助你深入思考。這些問題將引導你探索不同的思維角度，發現問題的核心，並啟發你的創意思維。準備好接受挑戰，讓我們一起通過問題來啟發你的科學探究之旅吧！",
+                    "嗨！我是你的科學探究小幫手，如果你有任何科學名詞或概念不清楚，或者對某個現象感到好奇，我都可以幫你解答。同時，我們也會通過引導性問題來幫助你深入思考和探索，讓你更好地理解和應用這些知識。讓我們一起踏上這趟科學探究之旅，發現和解決問題吧！"
+                ];
+                const filteredMessages = optionMessages[selectedOption].filter(msg => !unwantedMessages.includes(msg.text)).map(msg => msg.text).join(' ');
+                console.log(`過濾掉的文字:`, filteredMessages);
+    
+                const data = {
+                    prompt: filteredMessages // 過濾掉不需要的訊息後合併為一個字串
+                };
+                const headers = { 'accept': 'application/json', 'Content-Type': 'application/json' };
+    
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(data)
+                    });
+    
+                    const responseData = await response.json();
+                    const newResponse = { text: responseData.response, type: 'response' };
+                    setMessages(currentMessages => [...currentMessages, newResponse]);
+                    console.log(response);
+                    console.log(responseData);
+                    setOptionMessages(prevState => {
+                        const updatedState = {
+                            ...prevState,
+                            [selectedOption]: [...prevState[selectedOption], newResponse]
+                        };
+                        console.log(`新增到 ${selectedOption} 的訊息:`, newResponse);
+                        console.log(`option1 的所有訊息:`, updatedState.option1);
+                        console.log(`option2 的所有訊息:`, updatedState.option2);
+                        console.log(`option3 的所有訊息:`, updatedState.option3);
+                        return updatedState;
+                    });
+                } catch (error) {
+                    console.error('API 請求失敗', error);
+                } finally {
+                    setIsLoading(false);
+                }
+                return; // 結束函數，避免執行其他 API 呼叫
+            }
+    
             async function fetchElasticSearchResults(keyword) {
                 try {
-                    const response = await fetch('http://ml.hsueh.tw:7777/search/', {
+                    const response = await fetch('http://ml.hsueh.tw:7822/search/', {
                         method: 'POST',
                         headers: {
                             'accept': 'application/json',
@@ -97,11 +148,11 @@ const ChatRoom = () => {
                         },
                         body: JSON.stringify({ query: keyword })
                     });
-
+    
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-
+    
                     const data = await response.json();
                     return data;
                 } catch (error) {
@@ -109,11 +160,11 @@ const ChatRoom = () => {
                     return [];
                 }
             }
-
+    
             if (inputMessage.includes('查詢相關作品：')) {
-                const keyword = inputMessage.split('查詢相關作品：')[1]; 
-                const searchResults = await fetchElasticSearchResults(keyword); 
-
+                const keyword = inputMessage.split('查詢相關作品：')[1];
+                const searchResults = await fetchElasticSearchResults(keyword);
+    
                 if (Array.isArray(searchResults)) {
                     searchResults.forEach(result => {
                         const resultText = `
@@ -125,154 +176,184 @@ const ChatRoom = () => {
                                 <p><strong>連結:</strong> <a href="${result.連結}" target="_blank">${result.連結}</a></p>
                             </div>
                         `;
-                        setMessages(currentMessages => [...currentMessages, { text: resultText, type: 'response', isHTML: true }]);
+                        const newResponse = { text: resultText, type: 'response', isHTML: true };
+                        setMessages(currentMessages => [...currentMessages, newResponse]);
+                        setOptionMessages(prevState => {
+                            const updatedState = {
+                                ...prevState,
+                                [selectedOption]: [...prevState[selectedOption], newResponse]
+                            };
+                            console.log(`新增到 ${selectedOption} 的訊息:`, newResponse);
+                            console.log(`option1 的所有訊息:`, updatedState.option1);
+                            console.log(`option2 的所有訊息:`, updatedState.option2);
+                            console.log(`option3 的所有訊息:`, updatedState.option3);
+                            return updatedState;
+                        });
+    
+                        const resultText_clean = resultText.replace(/<[^>]*>?/gm, '');
+                        const responseMessageData = {
+                            role: 'assistant',
+                            content: resultText_clean,
+                            time: new Date().toLocaleTimeString(),
+                            date: new Date().toLocaleDateString(),
+                            from: user
+                        };
+                        socket.emit('chat-message', responseMessageData);
                     });
                 } else {
                     console.error('返回的數據不是陣列');
                 }
-                setIsLoading(false);  // 停止載入效果
+                setIsLoading(false);
                 return;
             }
-            // if (selectedOption === '5W1H') {
-            //     const searchResult = await fetch5W1H(inputMessage);
-            //     if (searchResult && !searchResult.error) {
-            //     //   setMessages(currentMessages => [...currentMessages,{ text: '你先想想這個問題：', type: 'response' }]);
-            //       if (searchResult === null) {
-            //         setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
-            //       } else {
-            //         setMessages(currentMessages => [...currentMessages, { text: searchResult.choices[0].message.content, type: 'response' }]);
-            //       }
-            //     } else {
-            //       setMessages(currentMessages => [...currentMessages, { text: '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。', type: 'response' }]);
-            //       console.error('返回的數據不符合預期');
-            //     }
-            //   } else if (inputMessage.includes('我想查詢相關作品：')) {
-            //     const keyword = inputMessage.split('我想查詢相關作品：')[1]; // 從輸入中提取關鍵字
-            //     const searchResults = await fetchElasticSearchResults(keyword); // 使用提取的關鍵字進行搜索
-            
-            //     if (Array.isArray(searchResults)) {
-            //         searchResults.forEach(result => {
-            //             setMessages(currentMessages => [...currentMessages, { text: result, type: 'response', isHTML: true }]);
-            //         });
-            //     } else {
-            //         console.error('返回的數據不是陣列');
-            //     }           
-            // } else if (selectedOption === '科學名詞QA') {
-            //     const searchResult = await fetchDefine(inputMessage);
-            //     if (searchResult && !searchResult.error) {
-            //       setMessages(currentMessages => [...currentMessages, { text: searchResult.choices[0].message.content, type: 'response' }]);
-            //     //   setMessages(currentMessages => [...currentMessages, { text: '你還有想要了解的問題嗎?', type: 'response' }]);
-            //     } else {
-            //       console.error('返回的數據不符合預期');
-            //     }
-                // const techResult = await fetchTechCsv(inputMessage);
-                // if (techResult.response && techResult.response !== 'API請求失敗' && techResult.response !== 'API請求過程中發生錯誤') {
-                //     setMessages(currentMessages => [
-                //         ...currentMessages, 
-                //         { text: techResult.response, type: 'response' } // 添加回應文本
-                //     ]);
-                //     setMessages(currentMessages => [
-                //         ...currentMessages,
-                //         { text: '以下來自科技大觀園的相關資訊...', type: 'response' }
-                //     ]);
-                //     techResult.searchContents.forEach(content => {
-                //         setMessages(currentMessages => [
-                //             ...currentMessages, 
-                //             { 
-                //                 text: `${content.title}\n${content.link}\n${content.description}`, 
-                //                 type: 'response',
-                //                 link: content.link // 保存連結用於後續渲染超連結
-                //             }
-                //         ]);
-                //     });
-                // } else {
-                //     console.error('API請求失敗或發生錯誤');
-                // } 
-            // }
-            // else if (selectedOption === '探究主題') {
-                // // 判斷是否有研究主題並選擇對應的 Rasa 端點
-                // if (isFirstMessage) {
-                //     // 只在第一次輸入時判斷是否有研究主題
-                //     const topicResponse = await determineTopic(inputMessage);
-                //     console.log("topicResponse",topicResponse);
-                //     rasaEndpoint = topicResponse === '沒有研究主題' ? 'http://localhost:5005/webhooks/rest/webhook' : 'http://localhost:5006/webhooks/rest/webhook';
-                //     isFirstMessage = false; // 更新狀態，表示已進行過主題判斷
-                //     console.log("isFirstMessage",isFirstMessage)
-                // }
-                // console.log("rasaEndpoint",rasaEndpoint);
-
-                const rasaEndpoint = 'http://localhost:5005/webhooks/rest/webhook';
-                // const rasaEndpoint = 'http://140.115.126.232:5005/webhooks/rest/webhook';
-
+    
+            async function fetchGenerateAnswer(inputMessage) {
+                const url = "http://ml.hsueh.tw:8787/generate-answer/";
+                const data = { "query": inputMessage };
+                const headers = { 'accept': 'application/json', 'Content-Type': 'application/json' };
+    
                 try {
-                    const response = await fetch(rasaEndpoint, {
+                    const response = await fetch(url, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: inputMessage, sender: 'user'})
+                        headers: headers,
+                        body: JSON.stringify(data)
                     });
-                    const rasaMessages = await response.json();
-                    // // 處理API回應
-                        // if (response && response.trim() !== '') {
-                        //     const responseMessageData = {
-                        //         role: 'assistant',
-                        //         content: response,
-                        //         time: new Date().toLocaleTimeString(),
-                        //         date: new Date().toLocaleDateString()
-                        //     };
-
-                        //     // 發送API回應消息到後端
-                        //     socket.emit('chat-message', responseMessageData);
-
-                        //     // 更新 messages 狀態以包括API回應的消息
-                        //     setMessages(currentMessages => [...currentMessages, {...responseMessageData, text: response, type: 'response'}]);
-                        // }
-                    // 將 Rasa 回應的訊息進行分段處理並添加到聊天室 UI
-                    rasaMessages.forEach(message => {
-                        const urlRegex = /(http[s]?:\/\/[^\s]+)/g;
-                        const matchedUrls = message.text.match(urlRegex);
-                    
-                        if (matchedUrls) {
-                            // 訊息包含超連結，不分段並轉換為超連結
-                            let processedMessage = message.text;
-                            matchedUrls.forEach(url => {
-                                processedMessage = processedMessage.replace(url, `<a href="${url}" target="_blank">${url}</a>`);
-                            });
-                            setMessages(currentMessages => [...currentMessages, { text: processedMessage, type: 'html', isHTML: true }]);
-                        } else {
-                            // 訊息不包含超連結，進行分段處理
-                            const splitMessages = message.text.split('\n').filter(msg => msg.trim() !== '');
-                            splitMessages.forEach(msg => {
-                                setMessages(currentMessages => [...currentMessages, { text: msg, type: 'response', isHTML: true }]);
-                            });
-                        }
-                            // 新增代碼處理按鈕
-                            if (message.buttons && message.buttons.length > 0) {
-                                message.buttons.forEach(button => {
-                                    const buttonText = button.title;
-                                    const buttonPayload = button.payload;
-                                    // 創建一個 HTML 按鈕並設定點擊事件
-                                    const buttonHTML = `<button onclick='sendPayload("${buttonPayload}")'>${buttonText}</button>`;
-                                    // 添加按鈕到聊天界面
-                                    setMessages(currentMessages => [...currentMessages, { text: buttonHTML, type: 'html', isHTML: true }]);
-                                });
-                            }
-            
-                        const responseMessageData = {
-                            role: 'assistant',
-                            content: message.text,
-                            time: new Date().toLocaleTimeString(),
-                            date: new Date().toLocaleDateString()
-                        };
-
-                    // 儲存對話資料到後端或數據庫
-                    socket.emit('chat-message', responseMessageData);
-                });
-
-                setIsLoading(false);  // 停止載入效果
-            } catch (error) {
-                console.error('與 Rasa 通信過程中出現錯誤：', error);
-                setIsLoading(false);  // 發生錯誤也要停止載入效果
+    
+                    const responseData = await response.json();
+                    return responseData['answer'];
+                } catch (error) {
+                    console.error('API 請求失敗', error);
+                    return null;
+                }
             }
+    
+            async function fetchFollowUp(inputMessage) {
+                const url = "http://ml.hsueh.tw:8787/generate-followup/";
+                const data = { "query": inputMessage };
+                const headers = { 'accept': 'application/json', 'Content-Type': 'application/json' };
+    
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(data)
+                    });
+    
+                    const responseData = await response.json();
+                    return responseData['follow_up'];
+                } catch (error) {
+                    console.error('API 請求失敗', error);
+                    return null;
+                }
+            }
+    
+            async function fetchGenerateText(inputMessage) {
+                const url = "http://ml.hsueh.tw:8787/generate-text/";
+                const data = { "query": inputMessage };
+                const headers = { 'accept': 'application/json', 'Content-Type': 'application/json' };
+    
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify(data)
+                    });
+    
+                    const responseData = await response.json();
+                    return responseData['response'];
+                } catch (error) {
+                    console.error('API 請求失敗', error);
+                    return null;
+                }
+            }
+            // 科學知識解答
+            if (selectedOption === 'option1') {
+                const apiResponse = await fetchGenerateAnswer(inputMessage);
+                const messageData = {
+                    role: 'assistant',
+                    content: apiResponse ? apiResponse : '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。',
+                    time: new Date().toLocaleTimeString(),
+                    date: new Date().toLocaleDateString(),
+                    from: user,
+                    optionText: selectedOption
+                };
+    
+                const newResponse = { text: messageData.content, type: 'response' };
+                setMessages(currentMessages => [...currentMessages, newResponse]);
+                setOptionMessages(prevState => {
+                    const updatedState = {
+                        ...prevState,
+                        [selectedOption]: [...prevState[selectedOption], newResponse]
+                    };
+                    console.log(`新增到 ${selectedOption} 的訊息:`, newResponse);
+                    console.log(`option1 的所有訊息:`, updatedState.option1);
+                    console.log(`option2 的所有訊息:`, updatedState.option2);
+                    console.log(`option3 的所有訊息:`, updatedState.option3);
+                    return updatedState;
+                });
+    
+                socket.emit('chat-message', messageData);
+            } 
+            // 探究主題
+            else if (selectedOption === 'option3') {
+                const apiResponse = await fetchGenerateText(inputMessage);
+                const messageData = {
+                    role: 'assistant',
+                    content: apiResponse ? apiResponse : '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。',
+                    time: new Date().toLocaleTimeString(),
+                    date: new Date().toLocaleDateString(),
+                    from: user,
+                    optionText: selectedOption
+                };
+                console.log(apiResponse)
+                console.log(messageData)
+    
+                const newResponse = { text: messageData.content, type: 'response' };
+                setMessages(currentMessages => [...currentMessages, newResponse]);
+                setOptionMessages(prevState => {
+                    const updatedState = {
+                        ...prevState,
+                        [selectedOption]: [...prevState[selectedOption], newResponse]
+                    };
+                    console.log(`新增到 ${selectedOption} 的訊息:`, newResponse);
+                    console.log(`option1 的所有訊息:`, updatedState.option1);
+                    console.log(`option2 的所有訊息:`, updatedState.option2);
+                    console.log(`option3 的所有訊息:`, updatedState.option3);
+                    return updatedState;
+                });
+    
+                socket.emit('chat-message', messageData);
+            } 
+            // 引導問題
+            else if (selectedOption === 'option2') {
+                const apiResponse = await fetchFollowUp(inputMessage);
+                const messageData = {
+                    role: 'assistant',
+                    content: apiResponse ? apiResponse : '不好意思，我沒有理解你的意思。你能說得更具體一點嗎。',
+                    time: new Date().toLocaleTimeString(),
+                    date: new Date().toLocaleDateString(),
+                    from: user,
+                    optionText: selectedOption
+                };
+    
+                const newResponse = { text: messageData.content, type: 'response' };
+                setMessages(currentMessages => [...currentMessages, newResponse]);
+                setOptionMessages(prevState => {
+                    const updatedState = {
+                        ...prevState,
+                        [selectedOption]: [...prevState[selectedOption], newResponse]
+                    };
+                    console.log(`新增到 ${selectedOption} 的訊息:`, newResponse);
+                    console.log(`option1 的所有訊息:`, updatedState.option1);
+                    console.log(`option2 的所有訊息:`, updatedState.option2);
+                    console.log(`option3 的所有訊息:`, updatedState.option3);
+                    return updatedState;
+                });
+    
+                socket.emit('chat-message', messageData);
+            }
+    
+            setIsLoading(false);
         }
     };
 
@@ -283,83 +364,96 @@ const ChatRoom = () => {
     };
 
     const handleClearHistory = () => {
-        // 清除 localStorage 中的歷史消息
+        console.log("清除歷史紀錄");
         localStorage.removeItem('chatMessages');
+        localStorage.removeItem('optionMessages');
         setMessages([]);
+        setOptionMessages({
+            option1: [],
+            option2: [],
+            option3: []
+        });
     };
 
     const loadingOptions = {
         loop: true,
-        autoplay: true, 
+        autoplay: true,
         animationData: LoadingAnimation,
         rendererSettings: {
             preserveAspectRatio: 'none'
         }
     };
-    // const handleOptionSelect = (option) => {
-    //     console.log("選擇的選項:", option);
-    //     let optionText = "";
-    //     let welcomeMessage = "";
-    //     switch (option) {
-    //         case "option1":
-    //             optionText = "探究主題";
-    //             Swal.fire({
-    //                 title: "尋找探究主題",
-    //                 text: "在這邊你可以探索你有興趣或是想研究的探究主題！",
-    //                 icon: "info"
-    //               });
-    //             welcomeMessage = "嗨！我是一位專門輔導高中生科學探究與實作的自然科學導師。我會用適合高中生的語言，保持專業的同時，幫助你探索自然科學的奧秘，並引導你選擇一個有興趣的科展主題，以及更深入了解你的研究問題。今天我們來一起找出一個適合你的科學探究主題。還是你已經有研究主題了呢？";
-    //             break;
-    //             case "option2":
-    //                 optionText = "科學名詞QA";
-    //                 Swal.fire({
-    //                     title: "科學名詞QA",
-    //                     text: "在這邊解釋你想知道的科學名詞定義或是對現象感到好奇，我都可以幫你解答喔！",
-    //                     icon: "info"
-    //                   });
-    //                   welcomeMessage = "嗨，你有想知道的科學名詞定義不清楚的或是你對什麼現象感到好奇，我都可以幫你解答喔！";
-    //                 break;
-    //             case "option3":
-    //                 optionText = "5W1H";
-    //                 Swal.fire({
-    //                     title: "5W1H",
-    //                     text: "5W1H",
-    //                     icon: "info"
-    //                   });
-    //                 welcomeMessage = "嗨，你可以提出研究主題時利用5W1H的問題來引導你思考！";
-    //                   break;
-    //             default:
-    //                 optionText = "";
-    //         }
-    //     setSelectedOption(optionText);
-    //     setMessages([]); // 清空現有訊息
-    //     if (welcomeMessage) {
-    //         // 使用setTimeout延遲訊息的顯示
-    //         setTimeout(() => {
-    //             setMessages([{ text: welcomeMessage, type: 'response', time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() }]);
-    //         }, 1000); // 延遲500毫秒
-    //     }
-    //     setTempMessage(optionText); // 設置短期顯示的提示信息
-    // };
+
+    const handleOptionSelect = (option) => {
+        console.log("選擇的選項:", option);
+        let optionText = "";
+        let welcomeMessage = "";
+        switch (option) {
+            case "option1":
+                optionText = "科學知識解答";
+                Swal.fire({
+                    title: "科學知識解答",
+                    text: "你有什麼想了解的科學名詞或概念都可以問我喔！",
+                    icon: "info"
+                });
+                welcomeMessage = "嗨！我是你的科學探究小幫手，專門幫助高中生解答各種科學名詞和相關概念。我會用簡單易懂的方式解釋複雜的科學知識，幫助你在自然科學的學習中取得進步！";
+                break;
+            case "option2":
+                optionText = "引導問題";
+                Swal.fire({
+                    title: "引導問題",
+                    text: "通過引導問題來啟發你的思考",
+                    icon: "info"
+                });
+                welcomeMessage = "嗨！我是你的科學探究小幫手，在這裡，我們會通過提出引導性問題來幫助你深入思考。這些問題將引導你探索不同的思維角度，發現問題的核心，並啟發你的創意思維。準備好接受挑戰，讓我們一起通過問題來啟發你的科學探究之旅吧！";
+                break;
+            case "option3":
+                optionText = "探究主題";
+                Swal.fire({
+                    title: "探究主題",
+                    text: "探索科學世界，解答你的疑問！",
+                    icon: "info"
+                });
+                welcomeMessage = "嗨！我是你的科學探究小幫手，如果你有任何科學名詞或概念不清楚，或者對某個現象感到好奇，我都可以幫你解答。同時，我們也會通過引導性問題來幫助你深入思考和探索，讓你更好地理解和應用這些知識。讓我們一起踏上這趟科學探究之旅，發現和解決問題吧！";
+                break;
+            default:
+                optionText = "";
+        }
+        console.log("設定的選項文字:", optionText);
+        setSelectedOption(option);
+        setMessages(optionMessages[option]); // 切換到相應選項的對話內容
+        if (welcomeMessage) {
+            setMessages(currentMessages => [...currentMessages, { text: welcomeMessage, type: 'response', time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() }]);
+            setOptionMessages(prevState => {
+                const updatedState = {
+                    ...prevState,
+                    [option]: [...prevState[option], { text: welcomeMessage, type: 'response', time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() }]
+                };
+                console.log(`新增到 ${option} 的訊息:`, { text: welcomeMessage, type: 'response', time: new Date().toLocaleTimeString(), date: new Date().toLocaleDateString() });
+                console.log(`option1 的所有訊息:`, updatedState.option1);
+                console.log(`option2 的所有訊息:`, updatedState.option2);
+                console.log(`option3 的所有訊息:`, updatedState.option3);
+                return updatedState;
+            });
+        }
+    };
 
     return (
         <div className="chat-room">
             <div className="left-panel">
                 <div className="chatroom-intro">
                     <h1>科學探究與實作學習平台</h1>
-                    <h3>聊天室介紹</h3>
-                    <p>歡迎來到專為高中生設計的科學探究與實作聊天室！這裡聚焦於高中生在科學探究學習中的過程，特別關注「科學探究能力」和「自我導向學習傾向」。</p>
-                    <p>在這個平台上，我們鼓勵學生通過日常生活、科學研究或課堂所學啟發，找到並深入探討他們感興趣的科學主題。</p>
-                    <h5>在「科學探究與實作」中，你們將學習到什麼呢？</h5>
-                    <p>1. 發現問題：學習從日常生活中觀察現象，提出問題。這是科學探究的起點，每一項偉大的科學發現都始於一個簡單的問題。</p>
-                    <p>2. 探究問題：通過實驗、研究和分析來尋找問題的答案。你將學會如何設計實驗、收集數據並從中得出結論。</p>
-                    <p>3. 批判思考與創新：鼓勵你們對現有知識提出質疑，並嘗試創新方法解決問題。這不僅僅是學習知識，更是培養獨立思考和創新能力。</p>
+                    <h5>按鈕介紹</h5>
+                    <p>以下三個按鈕，幫助你在學習過程中獲得不同的支持：</p>
+                    <p><strong>1. 科學知識解答：</strong>如果你對某個科學名詞或概念感到困惑，請點擊「科學知識解答」按鈕。我會用簡單易懂的方式幫你解答各種科學問題，幫助你更好地理解相關知識。</p>
+                    <p><strong>2. 引導問題：</strong>如果你希望通過思考來探索問題，請點擊「引導問題」按鈕。我們會提出引導性問題，幫助你從不同的角度思考，激發你的創意思維和探究精神。</p>
+                    <p><strong>3. 探究主題：</strong>如果你有任何科學名詞或概念不清楚，或者對某個現象感到好奇，請點擊「探究主題」按鈕。我會幫助你解答疑問，並通過引導性問題來啟發你的思考和探索，讓你更好地理解和應用這些知識。讓我們一起踏上這趟科學探究之旅，發現和解決問題吧！</p>
                 </div>
-                {/* <div className="options"> */}
-                    {/* <button onClick={() => handleOptionSelect("option1")}>探究主題</button> */}
-                    {/* <button onClick={() => handleOptionSelect("option2")}>科學名詞QA</button> */}
-                    {/* <button onClick={() => handleOptionSelect("option3")}>5W1H</button> */}
-                {/* </div> */}
+                <div className="options">
+                    <button onClick={() => handleOptionSelect("option1")}>科學知識解答</button>
+                    <button onClick={() => handleOptionSelect("option2")}>引導問題</button>
+                    <button onClick={() => handleOptionSelect("option3")}>探究主題</button>
+                </div>
                 <div>
                     <DialogBox onScaffoldClick={setInputMessage} />
                 </div>
