@@ -30,32 +30,19 @@ function Navigation() {
                     <Nav className="ms-auto">
                         {!user && (
                             <LinkContainer to="/login">
-                                <Nav.Link className="navbar-link">Login</Nav.Link>
+                                <Nav.Link className="navbar-link">登入</Nav.Link>
                             </LinkContainer>
                         )}
-                        {/* <LinkContainer to="/Statistics">
-                            <Nav.Link>Statistics</Nav.Link>
-                        </LinkContainer> */}
-                        {/* <LinkContainer to="/addTopic">
-                            <Nav.Link className="navbar-link">Add Topic</Nav.Link>
-                        </LinkContainer> */}
-                        {/* <LinkContainer>
-                            <Nav.Link className="navbar-link ">歷史紀錄</Nav.Link>
-                        </LinkContainer> */}
                         <LinkContainer to="/chat">
                             <Nav.Link className="navbar-link ">聊天室</Nav.Link>
                         </LinkContainer>
                         <LinkContainer to="/quiz">
                             <Nav.Link className="navbar-link ">主題選擇</Nav.Link>
                         </LinkContainer>
-                        {/* <LinkContainer to="/Process">
-                            <Nav.Link className="navbar-link">Process</Nav.Link>
-                        </LinkContainer> */}
                         {user && (
                             <NavDropdown
                                 title={
                                     <>
-                                        {/* <img src={user.picture} alt="User" className="navbar-user-image" /> */}
                                         {user.name}
                                     </>
                                 }

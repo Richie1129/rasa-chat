@@ -1,5 +1,3 @@
-# 排除 rasa1notopic 資料夾
+# 排除資料夾 rasa1notopic 和 rasa2topic
 rasa1notopic/
-
-# 排除 rasa2topic 資料夾
 rasa2topic/
