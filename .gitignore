@@ -1,0 +1,5 @@
+# 排除 rasa1notopic 資料夾
+rasa1notopic/
+
+# 排除 rasa2topic 資料夾
+rasa2topic/
