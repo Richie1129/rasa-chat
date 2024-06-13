@@ -1,7 +1,0 @@
-{
-  "rule_only_slots": [
-    "continue_conversation",
-    "science_discipline"
-  ],
-  "rule_only_loops": []
-}

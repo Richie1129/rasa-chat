@@ -1,6 +1,0 @@
-{
-  "rule_only_slots": [
-    "continue_conversation"
-  ],
-  "rule_only_loops": []
-}
