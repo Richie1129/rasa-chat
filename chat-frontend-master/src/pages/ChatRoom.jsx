@@ -1,3 +1,4 @@
+// ChatRoom.jsx
 import React, { useState, useContext, useEffect } from 'react';
 import { useSelector } from "react-redux";
 import { FaUser } from 'react-icons/fa';
@@ -449,11 +450,6 @@ const ChatRoom = () => {
                     <p><strong>2. 引導問題：</strong>如果你希望通過思考來探索問題，請點擊「引導問題」按鈕。我們會提出引導性問題，幫助你從不同的角度思考，激發你的創意思維和探究精神。</p>
                     <p><strong>3. 探究主題：</strong>如果你有任何科學名詞或概念不清楚，或者對某個現象感到好奇，請點擊「探究主題」按鈕。我會幫助你解答疑問，並通過引導性問題來啟發你的思考和探索，讓你更好地理解和應用這些知識。讓我們一起踏上這趟科學探究之旅，發現和解決問題吧！</p>
                 </div>
-                <div className="options">
-                    <button onClick={() => handleOptionSelect("option1")}>科學知識解答</button>
-                    <button onClick={() => handleOptionSelect("option2")}>引導問題</button>
-                    <button onClick={() => handleOptionSelect("option3")}>探究主題</button>
-                </div>
                 <div>
                     <DialogBox onScaffoldClick={setInputMessage} />
                 </div>
@@ -483,6 +479,11 @@ const ChatRoom = () => {
                             <Lottie options={loadingOptions} height={30} width={40} />
                         </div>
                     )}
+                </div>
+                <div className="buttons-container">
+                    <button className="option-button" onClick={() => handleOptionSelect("option1")}>科學知識解答</button>
+                    <button className="option-button" onClick={() => handleOptionSelect("option2")}>引導問題</button>
+                    <button className="option-button" onClick={() => handleOptionSelect("option3")}>探究主題</button>
                 </div>
                 <div className="message-input">
                     <FaUser className="user-icon" />

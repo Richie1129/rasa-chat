@@ -25,27 +25,6 @@
     margin-bottom: 20px; /* 添加下邊距 */
 }
 
-.options {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* 對齊按鈕到左邊 */
-}
-
-.options button {
-    margin: 10px;
-    padding: 10px;
-    border: none; /* 移除邊框 */
-    background-color: #5BA491; /* 更改背景色 */
-    color: white; /* 更改文字顏色 */
-    border-radius: 4px; /* 圓角邊框 */
-    cursor: pointer; /* 鼠標懸停時更改樣式 */
-}
-
-.options button:hover {
-    background-color: #5BA491; /* 懸停時更改背景色 */
-}
-
 .right-panel {
     flex: 2;
     display: flex;
@@ -54,13 +33,22 @@
 
 .buttons-container {
     display: flex;
-    flex-direction: column; /* 讓按鈕垂直排列 */
-    align-items: flex-start; /* 對齊到容器的起始邊 */
+    justify-content: center;
+    margin: 10px 0;
 }
 
-.button {
-    margin-bottom: 10px; /* 在按鈕之間添加間隔 */
-    /* 其他按鈕樣式 */
+.option-button {
+    margin: 0 5px;
+    padding: 10px 15px;
+    border: none;
+    background-color: #5BA491;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.option-button:hover {
+    background-color: #4e947e;
 }
 
 .message {

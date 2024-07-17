@@ -89,7 +89,7 @@ function App() {
             }).then((result) => {
                 // 當用戶點擊“好的”按鈕後，再執行重定向
                 if (result.isConfirmed) {
-                    window.location.href = '/login';
+                    window.location.href = '/signup';
                 }
             });
             
@@ -105,7 +105,7 @@ function App() {
                 <Navigation />
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    <Route path="/quiz" element={<Quiz />} />
+                    {/* <Route path="/quiz" element={<Quiz />} /> */}
                     {!user && (
                         <>
                             <Route path="/login" element={<Login />} />
@@ -115,6 +115,11 @@ function App() {
                     <Route path="/chat" element={
                         <ProtectedRoute>
                             <ChatRoom />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/quiz" element={
+                        <ProtectedRoute>
+                            <Quiz />
                         </ProtectedRoute>
                     } />
                 </Routes>

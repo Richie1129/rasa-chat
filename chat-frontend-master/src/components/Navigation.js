@@ -33,6 +33,11 @@ function Navigation() {
                                 <Nav.Link className="navbar-link">登入</Nav.Link>
                             </LinkContainer>
                         )}
+                        {!user && (
+                            <LinkContainer to="/signup">
+                                <Nav.Link className="navbar-link">註冊</Nav.Link>
+                            </LinkContainer>
+                        )}
                         <LinkContainer to="/chat">
                             <Nav.Link className="navbar-link ">聊天室</Nav.Link>
                         </LinkContainer>
